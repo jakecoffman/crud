@@ -54,7 +54,15 @@ type Ref struct {
 }
 
 type Response struct {
-	Description string `json:"description"`
+	Schema      JsonSchema `json:"schema"`
+	Description string     `json:"description"`
+}
+
+var DefaultResponse = map[string]Response{
+	"default": {
+		Schema:      JsonSchema{Type: "string"},
+		Description: "Successful",
+	},
 }
 
 func NewRouter(title, version string) *Router {
@@ -76,7 +84,6 @@ type Spec struct {
 	Options     Options
 	Summary     string
 	Description string
-	Responses   map[string]Response
 }
 
 type Options struct {
@@ -131,16 +138,16 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 		var operation *Operation
 		switch strings.ToLower(spec.Method) {
 		case "get":
-			path.Get = &Operation{Responses: spec.Responses}
+			path.Get = &Operation{Responses: DefaultResponse}
 			operation = path.Get
 		case "post":
-			path.Post = &Operation{Responses: spec.Responses}
+			path.Post = &Operation{Responses: DefaultResponse}
 			operation = path.Post
 		case "put":
-			path.Put = &Operation{Responses: spec.Responses}
+			path.Put = &Operation{Responses: DefaultResponse}
 			operation = path.Put
 		case "delete":
-			path.Delete = &Operation{Responses: spec.Responses}
+			path.Delete = &Operation{Responses: DefaultResponse}
 			operation = path.Delete
 		default:
 			panic("Unhandled method " + spec.Method)
