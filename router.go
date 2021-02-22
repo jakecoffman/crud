@@ -104,7 +104,8 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 	r.Definitions = map[string]JsonSchema{}
 
 	r.Paths = map[string]*Path{}
-	for _, spec := range r.Specs {
+	for i := range r.Specs {
+		spec := r.Specs[i]
 		mux.Handle(spec.Method, spec.Path, func(c *gin.Context) {
 			val := spec.Options.Validate
 			if val.Query != nil {

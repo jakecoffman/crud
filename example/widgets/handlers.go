@@ -1,6 +1,8 @@
 package widgets
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 type WidgetQuery struct {
 	Limit int `json:"limit" form:"limit"`
