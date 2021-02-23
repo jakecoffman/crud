@@ -84,15 +84,11 @@ type Spec struct {
 	Method      string
 	Path        string
 	Handler     gin.HandlerFunc
-	Options     Options
-	Summary     string
-	Description string
-}
-
-type Options struct {
 	Description string
 	Tags        []string
-	Validate    Validate
+	Summary     string
+
+	Validate Validate
 }
 
 type Validate struct {
@@ -117,7 +113,7 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 	for i := range r.Specs {
 		spec := r.Specs[i]
 		mux.Handle(spec.Method, spec.Path, func(c *gin.Context) {
-			val := spec.Options.Validate
+			val := spec.Validate
 			if val.Query != nil {
 				values := c.Request.URL.Query()
 				for field, schema := range val.Query {
@@ -148,7 +144,7 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 			if val.Path != nil {
 				for field, schema := range val.Path {
 					path := c.Param(field)
-					if schema.Req != nil && *schema.Req && path == "" {
+					if schema.IsRequired != nil && *schema.IsRequired && path == "" {
 						c.AbortWithStatusJSON(400, fmt.Sprintf("Missing path param"))
 						return
 					}
@@ -182,36 +178,36 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 		default:
 			panic("Unhandled method " + spec.Method)
 		}
-		operation.Tags = spec.Options.Tags
+		operation.Tags = spec.Tags
 
-		if spec.Options.Validate.Path != nil {
-			for name, field := range spec.Options.Validate.Path {
+		if spec.Validate.Path != nil {
+			for name, field := range spec.Validate.Path {
 				operation.Parameters = append(operation.Parameters, Parameter{
 					In:       "path",
 					Name:     name,
 					Type:     field.Type,
-					Required: field.Req,
+					Required: field.IsRequired,
 				})
 			}
 		}
-		if spec.Options.Validate.Query != nil {
-			for name, field := range spec.Options.Validate.Query {
+		if spec.Validate.Query != nil {
+			for name, field := range spec.Validate.Query {
 				operation.Parameters = append(operation.Parameters, Parameter{
 					In:       "query",
 					Name:     name,
 					Type:     field.Type,
-					Required: field.Req,
+					Required: field.IsRequired,
 				})
 			}
 		}
-		if spec.Options.Validate.Body != nil {
+		if spec.Validate.Body != nil {
 			modelName := fmt.Sprintf("Model %v", modelCounter)
 			parameter := Parameter{
 				In:     "body",
 				Name:   "body",
 				Schema: Ref{fmt.Sprint("#/definitions/", modelName)},
 			}
-			r.Definitions[modelName] = ToJsonSchema(spec.Options.Validate.Body)
+			r.Definitions[modelName] = ToJsonSchema(spec.Validate.Body)
 			modelCounter++
 			operation.Parameters = append(operation.Parameters, parameter)
 		}

@@ -5,11 +5,11 @@ import (
 )
 
 type Field struct {
-	Type    string      `json:"type"`
-	Maximum *float64    `json:"maximum,omitempty"`
-	Minimum *float64    `json:"minimum,omitempty"`
-	Req     *bool       `json:"required,omitempty"`
-	Ex      interface{} `json:"example,omitempty"`
+	Type       string      `json:"type"`
+	Maximum    *float64    `json:"maximum,omitempty"`
+	Minimum    *float64    `json:"minimum,omitempty"`
+	IsRequired *bool       `json:"required,omitempty"`
+	Ex         interface{} `json:"example,omitempty"`
 }
 
 var (
@@ -20,7 +20,7 @@ var (
 )
 
 func (f *Field) Validate(value interface{}) error {
-	if value == nil && *f.Req {
+	if value == nil && *f.IsRequired {
 		return ErrRequired
 	}
 
@@ -76,7 +76,7 @@ func (f Field) Max(max float64) Field {
 
 func (f Field) Required() Field {
 	required := true
-	f.Req = &required
+	f.IsRequired = &required
 	return f
 }
 
@@ -96,7 +96,7 @@ func ToJsonSchema(fields map[string]Field) JsonSchema {
 			Type:    field.Type,
 			Example: field.Ex,
 		}
-		if field.Req != nil && *field.Req {
+		if field.IsRequired != nil && *field.IsRequired {
 			schema.Required = append(schema.Required, name)
 		}
 	}
