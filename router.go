@@ -17,6 +17,8 @@ type Router struct {
 	Definitions map[string]JsonSchema `json:"definitions"`
 
 	Specs []Spec `json:"-"`
+
+	mux *gin.Engine
 }
 
 type Info struct {
@@ -79,6 +81,7 @@ func NewRouter(title, version string) *Router {
 			Title:   title,
 			Version: version,
 		},
+		mux: gin.Default(),
 	}
 }
 
@@ -89,6 +92,7 @@ func (r *Router) Add(specs ...Spec) {
 type Spec struct {
 	Method      string
 	Path        string
+	PreHandlers []gin.HandlerFunc
 	Handler     gin.HandlerFunc
 	Description string
 	Tags        []string
@@ -105,60 +109,23 @@ type Validate struct {
 	Header   map[string]Field
 }
 
-func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
-	// Build the routes and serve
-	mux := gin.Default()
-	for _, m := range middlewares {
-		mux.Use(m)
-	}
+func (r *Router) Use(middlewares ...gin.HandlerFunc) {
+	r.mux.Use(middlewares...)
+}
 
+func (r *Router) Serve(addr string) error {
 	modelCounter := 1
 	r.Definitions = map[string]JsonSchema{}
 
 	r.Paths = map[string]*Path{}
 	for i := range r.Specs {
 		spec := r.Specs[i]
-		mux.Handle(spec.Method, spec.Path, func(c *gin.Context) {
-			val := spec.Validate
-			if val.Query != nil {
-				values := c.Request.URL.Query()
-				for field, schema := range val.Query {
-					if err := schema.Validate(values.Get(field)); err != nil {
-						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
-						return
-					}
-				}
-			}
 
-			if val.Body != nil {
-				var body map[string]interface{}
-				if err := c.BindJSON(&body); err != nil {
-					c.AbortWithStatusJSON(400, err.Error())
-					return
-				}
-				for field, schema := range val.Body {
-					if err := schema.Validate(body[field]); err != nil {
-						c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, err.Error()))
-						return
-					}
-				}
-				// TODO perhaps the user passes a struct to bind to instead?
-				data, _ := json.Marshal(body)
-				c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
-			}
+		handlers := []gin.HandlerFunc{preHandler(spec)}
+		handlers = append(handlers, spec.PreHandlers...)
+		handlers = append(handlers, spec.Handler)
 
-			if val.Path != nil {
-				for field, schema := range val.Path {
-					path := c.Param(field)
-					if schema.IsRequired != nil && *schema.IsRequired && path == "" {
-						c.AbortWithStatusJSON(400, fmt.Sprintf("Missing path param"))
-						return
-					}
-				}
-			}
-
-			spec.Handler(c)
-		})
+		r.mux.Handle(spec.Method, spec.Path, handlers...)
 
 		if _, ok := r.Paths[spec.Path]; !ok {
 			r.Paths[spec.Path] = &Path{
@@ -219,11 +186,11 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 		}
 	}
 
-	mux.GET("/swagger.json", func(c *gin.Context) {
+	r.mux.GET("/swagger.json", func(c *gin.Context) {
 		c.JSON(200, r)
 	})
 
-	mux.GET("/", func(c *gin.Context) {
+	r.mux.GET("/", func(c *gin.Context) {
 		c.Header("content-type", "text/html")
 		_, err := c.Writer.Write(swaggerUiTemplate)
 		if err != nil {
@@ -231,8 +198,50 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 		}
 	})
 
-	err := mux.Run(addr)
+	err := r.mux.Run(addr)
 	return err
+}
+
+func preHandler(spec Spec) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		val := spec.Validate
+		if val.Query != nil {
+			values := c.Request.URL.Query()
+			for field, schema := range val.Query {
+				if err := schema.Validate(values.Get(field)); err != nil {
+					c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
+					return
+				}
+			}
+		}
+
+		if val.Body != nil {
+			var body map[string]interface{}
+			if err := c.BindJSON(&body); err != nil {
+				c.AbortWithStatusJSON(400, err.Error())
+				return
+			}
+			for field, schema := range val.Body {
+				if err := schema.Validate(body[field]); err != nil {
+					c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, err.Error()))
+					return
+				}
+			}
+			// TODO perhaps the user passes a struct to bind to instead?
+			data, _ := json.Marshal(body)
+			c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
+		}
+
+		if val.Path != nil {
+			for field, schema := range val.Path {
+				path := c.Param(field)
+				if schema.IsRequired != nil && *schema.IsRequired && path == "" {
+					c.AbortWithStatusJSON(400, fmt.Sprintf("Missing path param"))
+					return
+				}
+			}
+		}
+	}
 }
 
 //go:embed swaggerui.html
