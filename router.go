@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"regexp"
 	"strings"
 )
 
@@ -52,7 +53,7 @@ type Parameter struct {
 	Name string `json:"name"`
 
 	Type   string `json:"type,omitempty"`
-	Schema Ref    `json:"schema,omitempty"`
+	Schema *Ref   `json:"schema,omitempty"`
 
 	Required *bool `json:"required,omitempty"`
 }
@@ -124,7 +125,7 @@ func (r *Router) Serve(addr string) error {
 		handlers = append(handlers, spec.PreHandlers...)
 		handlers = append(handlers, spec.Handler)
 
-		r.Mux.Handle(spec.Method, spec.Path, handlers...)
+		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
 
 		if _, ok := r.Paths[spec.Path]; !ok {
 			r.Paths[spec.Path] = &Path{
@@ -177,7 +178,7 @@ func (r *Router) Serve(addr string) error {
 			parameter := Parameter{
 				In:     "body",
 				Name:   "body",
-				Schema: Ref{fmt.Sprint("#/definitions/", modelName)},
+				Schema: &Ref{fmt.Sprint("#/definitions/", modelName)},
 			}
 			r.Definitions[modelName] = ToJsonSchema(spec.Validate.Body)
 			modelCounter++
@@ -241,6 +242,12 @@ func preHandler(spec Spec) gin.HandlerFunc {
 			}
 		}
 	}
+}
+
+var swaggerPathPattern = regexp.MustCompile("\\{([^}]+)\\}")
+
+func swaggerToGinPattern(ginUrl string) string {
+	return swaggerPathPattern.ReplaceAllString(ginUrl, ":$1")
 }
 
 //go:embed swaggerui.html
