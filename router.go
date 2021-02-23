@@ -16,9 +16,8 @@ type Router struct {
 	Paths       map[string]*Path      `json:"paths"`
 	Definitions map[string]JsonSchema `json:"definitions"`
 
-	Specs []Spec `json:"-"`
-
-	mux *gin.Engine
+	Specs []Spec      `json:"-"`
+	Mux   *gin.Engine `json:"-"`
 }
 
 type Info struct {
@@ -81,7 +80,7 @@ func NewRouter(title, version string) *Router {
 			Title:   title,
 			Version: version,
 		},
-		mux: gin.Default(),
+		Mux: gin.Default(),
 	}
 }
 
@@ -110,7 +109,7 @@ type Validate struct {
 }
 
 func (r *Router) Use(middlewares ...gin.HandlerFunc) {
-	r.mux.Use(middlewares...)
+	r.Mux.Use(middlewares...)
 }
 
 func (r *Router) Serve(addr string) error {
@@ -125,7 +124,7 @@ func (r *Router) Serve(addr string) error {
 		handlers = append(handlers, spec.PreHandlers...)
 		handlers = append(handlers, spec.Handler)
 
-		r.mux.Handle(spec.Method, spec.Path, handlers...)
+		r.Mux.Handle(spec.Method, spec.Path, handlers...)
 
 		if _, ok := r.Paths[spec.Path]; !ok {
 			r.Paths[spec.Path] = &Path{
@@ -186,11 +185,11 @@ func (r *Router) Serve(addr string) error {
 		}
 	}
 
-	r.mux.GET("/swagger.json", func(c *gin.Context) {
+	r.Mux.GET("/swagger.json", func(c *gin.Context) {
 		c.JSON(200, r)
 	})
 
-	r.mux.GET("/", func(c *gin.Context) {
+	r.Mux.GET("/", func(c *gin.Context) {
 		c.Header("content-type", "text/html")
 		_, err := c.Writer.Write(swaggerUiTemplate)
 		if err != nil {
@@ -198,7 +197,7 @@ func (r *Router) Serve(addr string) error {
 		}
 	})
 
-	err := r.mux.Run(addr)
+	err := r.Mux.Run(addr)
 	return err
 }
 

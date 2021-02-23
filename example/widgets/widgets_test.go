@@ -10,11 +10,13 @@ import (
 	"time"
 )
 
+const port = "8888"
+
 func TestRoutes(t *testing.T) {
 	r := crud.NewRouter("test", "test")
 	r.Add(Routes...)
 	go func() {
-		if err := r.Serve(":8888"); err != nil {
+		if err := r.Serve(":" + port); err != nil {
 			log.Println(err)
 		}
 	}()
@@ -37,7 +39,7 @@ func TestRoutes(t *testing.T) {
 func get(url string) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8080"+url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:"+port+url, nil)
 	if err != nil {
 		return nil, err
 	}
