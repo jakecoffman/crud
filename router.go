@@ -12,12 +12,16 @@ import (
 
 type Router struct {
 	Swagger     string                `json:"swagger"`
-	Title       string                `json:"title"`
-	Version     string                `json:"version"`
+	Info        Info                  `json:"info"`
 	Paths       map[string]*Path      `json:"paths"`
 	Definitions map[string]JsonSchema `json:"definitions"`
 
 	Specs []Spec `json:"-"`
+}
+
+type Info struct {
+	Title   string `json:"title"`
+	Version string `json:"version"`
 }
 
 type JsonSchema struct {
@@ -71,8 +75,10 @@ var DefaultResponse = map[string]Response{
 func NewRouter(title, version string) *Router {
 	return &Router{
 		Swagger: "2.0",
-		Title:   title,
-		Version: version,
+		Info: Info{
+			Title:   title,
+			Version: version,
+		},
 	}
 }
 

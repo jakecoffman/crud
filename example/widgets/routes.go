@@ -29,10 +29,9 @@ var Routes = []crud.Spec{{
 		},
 	},
 }, {
-	Method:  "PUT",
-	Path:    "/widgets/:id",
-	Handler: UpdateHandler,
-
+	Method:      "PUT",
+	Path:        "/widgets/:id",
+	Handler:     UpdateHandler,
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
