@@ -1,9 +1,12 @@
 package crud
 
 import (
+	"bytes"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"strings"
 )
 
@@ -119,7 +122,34 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 				values := c.Request.URL.Query()
 				for field, schema := range val.Query {
 					if err := schema.Validate(values.Get(field)); err != nil {
-						c.JSON(400, fmt.Sprintf("Validation failed for field %v: %v", field, err.Error()))
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
+						return
+					}
+				}
+			}
+
+			if val.Body != nil {
+				var body map[string]interface{}
+				if err := c.BindJSON(&body); err != nil {
+					c.AbortWithStatusJSON(400, err.Error())
+					return
+				}
+				for field, schema := range val.Body {
+					if err := schema.Validate(body[field]); err != nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, err.Error()))
+						return
+					}
+				}
+				// TODO perhaps the user passes a struct to bind to instead?
+				data, _ := json.Marshal(body)
+				c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
+			}
+
+			if val.Path != nil {
+				for field, schema := range val.Path {
+					path := c.Param(field)
+					if schema.Req != nil && *schema.Req && path == "" {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Missing path param"))
 						return
 					}
 				}
@@ -154,6 +184,16 @@ func (r *Router) Serve(addr string, middlewares ...gin.HandlerFunc) error {
 		}
 		operation.Tags = spec.Options.Tags
 
+		if spec.Options.Validate.Path != nil {
+			for name, field := range spec.Options.Validate.Path {
+				operation.Parameters = append(operation.Parameters, Parameter{
+					In:       "path",
+					Name:     name,
+					Type:     field.Type,
+					Required: field.Req,
+				})
+			}
+		}
 		if spec.Options.Validate.Query != nil {
 			for name, field := range spec.Options.Validate.Query {
 				operation.Parameters = append(operation.Parameters, Parameter{

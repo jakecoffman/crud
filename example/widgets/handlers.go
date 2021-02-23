@@ -10,7 +10,9 @@ type WidgetQuery struct {
 
 func ListHandler(c *gin.Context) {
 	var query WidgetQuery
-	c.BindQuery(&query)
+	if err := c.BindQuery(&query); err != nil {
+		return
+	}
 	c.JSON(200, query)
 }
 
@@ -20,7 +22,9 @@ type WidgetCreate struct {
 
 func CreateHandler(c *gin.Context) {
 	var widget WidgetCreate
-	c.BindJSON(&widget)
+	if err := c.BindJSON(&widget); err != nil {
+		return
+	}
 	c.JSON(200, widget)
 }
 
@@ -31,7 +35,9 @@ type WidgetUpdate struct {
 
 func UpdateHandler(c *gin.Context) {
 	var widget WidgetCreate
-	c.BindJSON(&widget)
+	if err := c.BindJSON(&widget); err != nil {
+		return
+	}
 	c.JSON(200, widget)
 }
 
