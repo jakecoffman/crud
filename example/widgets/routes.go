@@ -14,7 +14,7 @@ var Routes = []crud.Spec{{
 	Tags:        tags,
 	Validate: crud.Validate{
 		Query: map[string]crud.Field{
-			"limit": crud.Number(),
+			"limit": crud.Number().Required().Min(0).Max(25).Description("Records to return"),
 		},
 	},
 }, {

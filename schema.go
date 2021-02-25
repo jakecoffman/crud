@@ -31,7 +31,7 @@ func (f *Field) Validate(value interface{}) error {
 
 	switch v := value.(type) {
 	case int:
-		if f.kind != "number" {
+		if f.kind != "integer" {
 			return ErrWrongType
 		}
 		if f.max != nil && float64(v) > *f.max {
