@@ -5,11 +5,13 @@ import (
 )
 
 type Field struct {
-	Type       string      `json:"type"`
-	Maximum    *float64    `json:"maximum,omitempty"`
-	Minimum    *float64    `json:"minimum,omitempty"`
-	IsRequired *bool       `json:"required,omitempty"`
-	Ex         interface{} `json:"example,omitempty"`
+	kind        string
+	max         *float64
+	min         *float64
+	required    *bool
+	example     interface{}
+	description string
+	enum        []interface{}
 }
 
 var (
@@ -20,68 +22,114 @@ var (
 )
 
 func (f *Field) Validate(value interface{}) error {
-	if value == nil && *f.IsRequired {
+	if value == nil && f.required != nil && *f.required {
 		return ErrRequired
+	}
+	if value == nil {
+		return nil
 	}
 
 	switch v := value.(type) {
 	case int:
-		if f.Type != "number" {
+		if f.kind != "number" {
 			return ErrWrongType
 		}
-		if f.Maximum != nil && float64(v) > *f.Maximum {
+		if f.max != nil && float64(v) > *f.max {
 			return ErrMaximum
 		}
-		if f.Minimum != nil && float64(v) < *f.Minimum {
+		if f.min != nil && float64(v) < *f.min {
 			return ErrMinimum
 		}
 	case float64:
-		if f.Type != "number" {
+		if f.kind != "number" {
 			return ErrWrongType
 		}
-		if f.Maximum != nil && v > *f.Maximum {
+		if f.max != nil && v > *f.max {
 			return ErrMaximum
 		}
-		if f.Minimum != nil && v < *f.Minimum {
+		if f.min != nil && v < *f.min {
 			return ErrMinimum
 		}
 	case string:
-		if f.Type != "string" {
+		if f.kind != "string" {
+			return ErrWrongType
+		}
+	case bool:
+		if f.kind != "boolean" {
+			return ErrWrongType
+		}
+	case []interface{}:
+		if f.kind != "array" {
 			return ErrWrongType
 		}
 	default:
-		return ErrWrongType
+		return fmt.Errorf("unhandled type %v", v)
 	}
 
 	return nil
 }
 
+const (
+	KindNumber  = "number"
+	KindString  = "string"
+	KindBoolean = "boolean"
+	KindArray   = "array"
+	KindFile    = "file"
+	KindInteger = "integer"
+)
+
 func Number() Field {
-	return Field{Type: "number"}
+	return Field{kind: KindNumber}
 }
 
 func String() Field {
-	return Field{Type: "string"}
+	return Field{kind: KindString}
+}
+
+func Boolean() Field {
+	return Field{kind: KindBoolean}
+}
+
+func Array() Field {
+	return Field{kind: KindArray}
+}
+
+func File() Field {
+	return Field{kind: KindFile}
+}
+
+func Integer() Field {
+	return Field{kind: KindInteger}
 }
 
 func (f Field) Min(min float64) Field {
-	f.Minimum = &min
+	f.min = &min
 	return f
 }
 
 func (f Field) Max(max float64) Field {
-	f.Maximum = &max
+	f.max = &max
 	return f
 }
 
 func (f Field) Required() Field {
 	required := true
-	f.IsRequired = &required
+	f.required = &required
 	return f
 }
 
 func (f Field) Example(ex interface{}) Field {
-	f.Ex = ex
+	f.example = ex
+	return f
+}
+
+func (f Field) Description(description string) Field {
+	f.description = description
+	return f
+}
+
+func (f Field) Enum(values ...interface{}) Field {
+	f.enum = values
 	return f
 }
 
@@ -92,13 +140,21 @@ func ToJsonSchema(fields map[string]Field) JsonSchema {
 	}
 
 	for name, field := range fields {
-		schema.Properties[name] = JsonSchema{
-			Type:    field.Type,
-			Example: field.Ex,
+		prop := JsonSchema{
+			Type:        field.kind,
+			Example:     field.example,
+			Description: field.description,
 		}
-		if field.IsRequired != nil && *field.IsRequired {
+		if field.required != nil && *field.required {
 			schema.Required = append(schema.Required, name)
 		}
+		if field.min != nil {
+			prop.Minimum = *field.min
+		}
+		if field.max != nil {
+			prop.Maximum = *field.max
+		}
+		schema.Properties[name] = prop
 	}
 
 	return schema

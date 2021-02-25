@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -27,10 +29,14 @@ type Info struct {
 }
 
 type JsonSchema struct {
-	Type       string                `json:"type,omitempty"`
-	Properties map[string]JsonSchema `json:"properties,omitempty"`
-	Required   []string              `json:"required,omitempty"`
-	Example    interface{}           `json:"example,omitempty"`
+	Type        string                `json:"type,omitempty"`
+	Properties  map[string]JsonSchema `json:"properties,omitempty"`
+	Required    []string              `json:"required,omitempty"`
+	Example     interface{}           `json:"example,omitempty"`
+	Description string                `json:"description,omitempty"`
+	Minimum     float64               `json:"minimum,omitempty"`
+	Maximum     float64               `json:"maximum,omitempty"`
+	Enum        []interface{}         `json:"enum,omitempty"`
 }
 
 type Path struct {
@@ -40,6 +46,7 @@ type Path struct {
 	Post        *Operation `json:"post,omitempty"`
 	Put         *Operation `json:"put,omitempty"`
 	Delete      *Operation `json:"delete,omitempty"`
+	Patch       *Operation `json:"patch,omitempty"`
 }
 
 type Operation struct {
@@ -55,7 +62,11 @@ type Parameter struct {
 	Type   string `json:"type,omitempty"`
 	Schema *Ref   `json:"schema,omitempty"`
 
-	Required *bool `json:"required,omitempty"`
+	Required    *bool         `json:"required,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Minimum     *float64      `json:"minimum,omitempty"`
+	Maximum     *float64      `json:"maximum,omitempty"`
+	Enum        []interface{} `json:"enum,omitempty"`
 }
 
 type Ref struct {
@@ -145,6 +156,9 @@ func (r *Router) Serve(addr string) error {
 		case "put":
 			path.Put = &Operation{Responses: DefaultResponse}
 			operation = path.Put
+		case "patch":
+			path.Patch = &Operation{Responses: DefaultResponse}
+			operation = path.Patch
 		case "delete":
 			path.Delete = &Operation{Responses: DefaultResponse}
 			operation = path.Delete
@@ -155,22 +169,32 @@ func (r *Router) Serve(addr string) error {
 
 		if spec.Validate.Path != nil {
 			for name, field := range spec.Validate.Path {
-				operation.Parameters = append(operation.Parameters, Parameter{
-					In:       "path",
-					Name:     name,
-					Type:     field.Type,
-					Required: field.IsRequired,
-				})
+				param := Parameter{
+					In:          "path",
+					Name:        name,
+					Type:        field.kind,
+					Required:    field.required,
+					Description: field.description,
+					Enum:        field.enum,
+					Minimum:     field.min,
+					Maximum:     field.max,
+				}
+				operation.Parameters = append(operation.Parameters, param)
 			}
 		}
 		if spec.Validate.Query != nil {
 			for name, field := range spec.Validate.Query {
-				operation.Parameters = append(operation.Parameters, Parameter{
-					In:       "query",
-					Name:     name,
-					Type:     field.Type,
-					Required: field.IsRequired,
-				})
+				param := Parameter{
+					In:          "query",
+					Name:        name,
+					Type:        field.kind,
+					Required:    field.required,
+					Description: field.description,
+					Enum:        field.enum,
+					Minimum:     field.min,
+					Maximum:     field.max,
+				}
+				operation.Parameters = append(operation.Parameters, param)
 			}
 		}
 		if spec.Validate.Body != nil {
@@ -208,7 +232,51 @@ func preHandler(spec Spec) gin.HandlerFunc {
 		if val.Query != nil {
 			values := c.Request.URL.Query()
 			for field, schema := range val.Query {
-				if err := schema.Validate(values.Get(field)); err != nil {
+				// query values are always strings, so we must try to convert
+				queryValue := values.Get(field)
+
+				// don't try to convert if the field is empty
+				if queryValue == "" {
+					if schema.required != nil && *schema.required {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrRequired))
+					}
+					return
+				}
+				var convertedValue interface{}
+				switch schema.kind {
+				case KindBoolean:
+					if queryValue == "true" {
+						convertedValue = true
+					} else if queryValue == "false" {
+						convertedValue = false
+					} else {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrWrongType))
+						return
+					}
+				case KindString:
+					convertedValue = queryValue
+				case KindNumber:
+					var err error
+					convertedValue, err = strconv.ParseFloat(queryValue, 64)
+					if err != nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrWrongType))
+						return
+					}
+				case KindInteger:
+					var err error
+					convertedValue, err = strconv.Atoi(queryValue)
+					if err != nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrWrongType))
+						return
+					}
+				case KindArray:
+					// TODO I'm not sure how this works yet
+					c.AbortWithStatusJSON(http.StatusNotImplemented, "TODO")
+					return
+				default:
+					c.AbortWithStatusJSON(400, fmt.Sprintf("Validation not possible due to kind: %v", schema.kind))
+				}
+				if err := schema.Validate(convertedValue); err != nil {
 					c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
 					return
 				}
@@ -235,7 +303,7 @@ func preHandler(spec Spec) gin.HandlerFunc {
 		if val.Path != nil {
 			for field, schema := range val.Path {
 				path := c.Param(field)
-				if schema.IsRequired != nil && *schema.IsRequired && path == "" {
+				if schema.required != nil && *schema.required && path == "" {
 					c.AbortWithStatusJSON(400, fmt.Sprintf("Missing path param"))
 					return
 				}
