@@ -138,6 +138,34 @@ func TestQueryValidation(t *testing.T) {
 			Input:    "?testquery=a",
 			Expected: 400,
 		},
+		{
+			Schema: map[string]Field{
+				"testquery": Integer().Enum(1, 2),
+			},
+			Input:    "?testquery=2",
+			Expected: 200,
+		},
+		{
+			Schema: map[string]Field{
+				"testquery": Integer().Enum(1, 2),
+			},
+			Input:    "?testquery=3",
+			Expected: 400,
+		},
+		{
+			Schema: map[string]Field{
+				"testquery": String().Enum("a"),
+			},
+			Input:    "?testquery=a",
+			Expected: 200,
+		},
+		{
+			Schema: map[string]Field{
+				"testquery": String().Enum("a"),
+			},
+			Input:    "?testquery=b",
+			Expected: 400,
+		},
 	}
 
 	for _, test := range tests {

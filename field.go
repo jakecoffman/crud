@@ -11,7 +11,18 @@ type Field struct {
 	required    *bool
 	example     interface{}
 	description string
-	enum        []interface{}
+	enum        enum
+}
+
+type enum []interface{}
+
+func (e enum) Has(needle interface{}) bool {
+	for _, value := range e {
+		if value == needle {
+			return true
+		}
+	}
+	return false
 }
 
 var (
@@ -20,6 +31,7 @@ var (
 	ErrMaximum        = fmt.Errorf("maximum exceeded")
 	ErrMinimum        = fmt.Errorf("minumum exceeded")
 	ErrNotImplemented = fmt.Errorf("not implemented")
+	ErrEnumNotFound   = fmt.Errorf("value not in enum")
 )
 
 func (f *Field) Validate(value interface{}) error {
@@ -65,6 +77,10 @@ func (f *Field) Validate(value interface{}) error {
 		}
 	default:
 		return fmt.Errorf("unhandled type %v", v)
+	}
+
+	if f.enum != nil && !f.enum.Has(value) {
+		return ErrEnumNotFound
 	}
 
 	return nil
