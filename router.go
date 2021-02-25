@@ -40,19 +40,19 @@ type JsonSchema struct {
 }
 
 type Path struct {
-	Summary     string     `json:"summary,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Get         *Operation `json:"get,omitempty"`
-	Post        *Operation `json:"post,omitempty"`
-	Put         *Operation `json:"put,omitempty"`
-	Delete      *Operation `json:"delete,omitempty"`
-	Patch       *Operation `json:"patch,omitempty"`
+	Get    *Operation `json:"get,omitempty"`
+	Post   *Operation `json:"post,omitempty"`
+	Put    *Operation `json:"put,omitempty"`
+	Delete *Operation `json:"delete,omitempty"`
+	Patch  *Operation `json:"patch,omitempty"`
 }
 
 type Operation struct {
-	Tags       []string            `json:"tags,omitempty"`
-	Parameters []Parameter         `json:"parameters,omitempty"`
-	Responses  map[string]Response `json:"responses"`
+	Tags        []string            `json:"tags,omitempty"`
+	Parameters  []Parameter         `json:"parameters,omitempty"`
+	Responses   map[string]Response `json:"responses"`
+	Description string              `json:"description"`
+	Summary     string              `json:"summary"`
 }
 
 type Parameter struct {
@@ -139,10 +139,7 @@ func (r *Router) Serve(addr string) error {
 		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
 
 		if _, ok := r.Paths[spec.Path]; !ok {
-			r.Paths[spec.Path] = &Path{
-				Summary:     spec.Summary,
-				Description: spec.Description,
-			}
+			r.Paths[spec.Path] = &Path{}
 		}
 		path := r.Paths[spec.Path]
 		var operation *Operation
@@ -166,6 +163,8 @@ func (r *Router) Serve(addr string) error {
 			panic("Unhandled method " + spec.Method)
 		}
 		operation.Tags = spec.Tags
+		operation.Description = spec.Description
+		operation.Summary = spec.Summary
 
 		if spec.Validate.Path != nil {
 			for name, field := range spec.Validate.Path {
