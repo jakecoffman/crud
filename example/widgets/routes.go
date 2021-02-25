@@ -30,7 +30,7 @@ var Routes = []crud.Spec{{
 	},
 }, {
 	Method:      "GET",
-	Path:        "/widgets/:id",
+	Path:        "/widgets/{id}",
 	Handler:     GetHandler,
 	Description: "Updates a widget",
 	Tags:        tags,
@@ -41,7 +41,7 @@ var Routes = []crud.Spec{{
 	},
 }, {
 	Method:      "PUT",
-	Path:        "/widgets/:id",
+	Path:        "/widgets/{id}",
 	Handler:     UpdateHandler,
 	Description: "Updates a widget",
 	Tags:        tags,
@@ -55,7 +55,7 @@ var Routes = []crud.Spec{{
 	},
 }, {
 	Method:      "DELETE",
-	Path:        "/widgets/:id",
+	Path:        "/widgets/{id}",
 	Handler:     DeleteHandler,
 	Description: "Deletes a widget",
 	Tags:        tags,

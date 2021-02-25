@@ -9,7 +9,9 @@ import (
 func main() {
 	r := crud.NewRouter("Widget API", "1.0.0")
 
-	r.Add(widgets.Routes...)
+	if err := r.Add(widgets.Routes...); err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("Serving http://127.0.0.1:8080")
 	err := r.Serve(":8080")

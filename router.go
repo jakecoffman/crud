@@ -34,16 +34,15 @@ func NewRouter(title, version string) *Router {
 	}
 }
 
-// Add routes to the swagger spec and installs a handler with built-in validation.
-func (r *Router) Add(specs ...Spec) {
+// Add routes to the swagger spec and installs a handler with built-in validation. Some validation of the
+// route itself occurs on Add so this is the kind of error that can be returned.
+func (r *Router) Add(specs ...Spec) error {
 	for i := range specs {
 		spec := specs[i]
 
-		handlers := []gin.HandlerFunc{validationMiddleware(spec)}
-		handlers = append(handlers, spec.PreHandlers...)
-		handlers = append(handlers, spec.Handler)
-
-		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
+		if err := spec.Valid(); err != nil {
+			return err
+		}
 
 		if _, ok := r.Swagger.Paths[spec.Path]; !ok {
 			r.Swagger.Paths[spec.Path] = &Path{}
@@ -52,18 +51,33 @@ func (r *Router) Add(specs ...Spec) {
 		var operation *Operation
 		switch strings.ToLower(spec.Method) {
 		case "get":
+			if path.Get != nil {
+				return fmt.Errorf("duplicate GET on route %v", spec.Path)
+			}
 			path.Get = &Operation{}
 			operation = path.Get
 		case "post":
+			if path.Post != nil {
+				return fmt.Errorf("duplicate POST on route %v", spec.Path)
+			}
 			path.Post = &Operation{}
 			operation = path.Post
 		case "put":
+			if path.Put != nil {
+				return fmt.Errorf("duplicate PUT on route %v", spec.Path)
+			}
 			path.Put = &Operation{}
 			operation = path.Put
 		case "patch":
+			if path.Patch != nil {
+				return fmt.Errorf("duplicate PATCH on route %v", spec.Path)
+			}
 			path.Patch = &Operation{}
 			operation = path.Patch
 		case "delete":
+			if path.Delete != nil {
+				return fmt.Errorf("duplicate DELETE on route %v", spec.Path)
+			}
 			path.Delete = &Operation{}
 			operation = path.Delete
 		default:
@@ -115,7 +129,15 @@ func (r *Router) Add(specs ...Spec) {
 			r.modelCounter++
 			operation.Parameters = append(operation.Parameters, parameter)
 		}
+
+		// Finally add the route to gin. This is done last because gin will panic on duplicate entries.
+		handlers := []gin.HandlerFunc{validationMiddleware(spec)}
+		handlers = append(handlers, spec.PreHandlers...)
+		handlers = append(handlers, spec.Handler)
+
+		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
 	}
+	return nil
 }
 
 // Spec is used to generate swagger paths and automatic handler validation.
@@ -129,6 +151,43 @@ type Spec struct {
 	Summary     string
 
 	Validate Validate
+}
+
+var methods = map[string]struct{}{
+	"get":     {},
+	"head":    {},
+	"post":    {},
+	"put":     {},
+	"delete":  {},
+	"connect": {},
+	"options": {},
+	"trace":   {},
+	"patch":   {},
+}
+
+func (s Spec) Valid() error {
+	if _, ok := methods[strings.ToLower(s.Method)]; !ok {
+		return fmt.Errorf("invalid method '%v'", s.Method)
+	}
+
+	if s.Validate.Path != nil {
+		params := pathParms(s.Path)
+		// not ideal complexity but path params should be pretty small n
+		for name := range s.Validate.Path {
+			var found bool
+			for _, param := range params {
+				if name == param {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("missing path param '%v' in url: '%v'", name, s.Path)
+			}
+		}
+	}
+
+	return nil
 }
 
 // Validate are optional fields that will be used during validation. Leave unneeded
@@ -162,8 +221,15 @@ func (r *Router) Serve(addr string) error {
 // we need to convert swagger endpoints /widget/{id} to gin endpoints /widget/:id
 var swaggerPathPattern = regexp.MustCompile("\\{([^}]+)\\}")
 
-func swaggerToGinPattern(ginUrl string) string {
-	return swaggerPathPattern.ReplaceAllString(ginUrl, ":$1")
+func swaggerToGinPattern(swaggerUrl string) string {
+	return swaggerPathPattern.ReplaceAllString(swaggerUrl, ":$1")
+}
+
+func pathParms(swaggerUrl string) (params []string) {
+	for _, p := range swaggerPathPattern.FindAllString(swaggerUrl, -1) {
+		params = append(params, p[1:len(p)-1])
+	}
+	return
 }
 
 //go:embed swaggerui.html
