@@ -69,19 +69,44 @@ func preHandler(spec Spec) gin.HandlerFunc {
 		}
 
 		if val.Body != nil {
-			// TODO this could be an array, basic type, or "null"
 			var body map[string]interface{}
 			if err := c.BindJSON(&body); err != nil {
 				c.AbortWithStatusJSON(400, err.Error())
 				return
 			}
 			for field, schema := range val.Body {
-				if err := schema.Validate(body[field]); err != nil {
+				value := body[field]
+				if value == nil {
+					if schema.required != nil && *schema.required {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, ErrRequired))
+						return
+					}
+					continue
+				}
+
+				if schema.kind == KindInteger {
+					// JSON doesn't have integers, so Go treats these fields as float64.
+					// Need to convert to integer before validating it.
+					switch value.(type) {
+					case float64:
+						v := value.(float64)
+						// check to see if the number can be represented as an integer
+						if v != float64(int64(v)) {
+							c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, ErrWrongType))
+							return
+						}
+						value = int(value.(float64))
+					default:
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, ErrWrongType))
+						return
+					}
+				}
+				if err := schema.Validate(value); err != nil {
 					c.AbortWithStatusJSON(400, fmt.Sprintf("Body validation failed for field %v: %v", field, err.Error()))
 					return
 				}
 			}
-			// TODO perhaps the user passes a struct to bind to instead?
+			// TODO strip unknown/unexpected fields
 			data, _ := json.Marshal(body)
 			c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
 		}
