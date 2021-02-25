@@ -141,7 +141,7 @@ func TestQueryValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		handler := preHandler(Spec{
+		handler := validationMiddleware(Spec{
 			Validate: Validate{Query: test.Schema},
 		})
 
@@ -212,11 +212,69 @@ func TestBodyValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		handler := preHandler(Spec{
+		handler := validationMiddleware(Spec{
 			Validate: Validate{Body: test.Schema},
 		})
 
 		w, c := body(test.Input)
+		handler(c)
+
+		if w.Result().StatusCode != test.Expected {
+			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, w.Code, test.Input, test.Schema)
+		}
+	}
+}
+
+func path(pathValue string) (*httptest.ResponseRecorder, *gin.Context) {
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "http://example.com", nil)
+	c.Params = []gin.Param{{Key: "id", Value: pathValue}}
+	return w, c
+}
+
+func TestPathValidation(t *testing.T) {
+	tests := []struct {
+		Schema   map[string]Field
+		Input    string
+		Expected int
+	}{
+		{
+			Schema: map[string]Field{
+				"id": Integer(),
+			},
+			Input:    ``,
+			Expected: 200,
+		},
+		{
+			Schema: map[string]Field{
+				"int": Integer().Required(),
+			},
+			Input:    ``,
+			Expected: 400,
+		},
+		{
+			Schema: map[string]Field{
+				"id": Integer().Required(),
+			},
+			Input:    `a`,
+			Expected: 400,
+		},
+		{
+			Schema: map[string]Field{
+				"id": Integer().Required(),
+			},
+			Input:    `1`,
+			Expected: 200,
+		},
+	}
+
+	for _, test := range tests {
+		handler := validationMiddleware(Spec{
+			Validate: Validate{Path: test.Schema},
+		})
+
+		w, c := path(test.Input)
 		handler(c)
 
 		if w.Result().StatusCode != test.Expected {

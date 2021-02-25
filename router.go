@@ -39,7 +39,7 @@ func (r *Router) Add(specs ...Spec) {
 	for i := range specs {
 		spec := specs[i]
 
-		handlers := []gin.HandlerFunc{preHandler(spec)}
+		handlers := []gin.HandlerFunc{validationMiddleware(spec)}
 		handlers = append(handlers, spec.PreHandlers...)
 		handlers = append(handlers, spec.Handler)
 

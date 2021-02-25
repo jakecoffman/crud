@@ -28,6 +28,10 @@ func CreateHandler(c *gin.Context) {
 	c.JSON(200, widget)
 }
 
+func GetHandler(c *gin.Context) {
+	c.JSON(200, c.Param("id"))
+}
+
 type WidgetUpdate struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`

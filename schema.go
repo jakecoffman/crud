@@ -15,10 +15,11 @@ type Field struct {
 }
 
 var (
-	ErrRequired  = fmt.Errorf("value is required")
-	ErrWrongType = fmt.Errorf("wrong type passed")
-	ErrMaximum   = fmt.Errorf("maximum exceeded")
-	ErrMinimum   = fmt.Errorf("minumum exceeded")
+	ErrRequired       = fmt.Errorf("value is required")
+	ErrWrongType      = fmt.Errorf("wrong type passed")
+	ErrMaximum        = fmt.Errorf("maximum exceeded")
+	ErrMinimum        = fmt.Errorf("minumum exceeded")
+	ErrNotImplemented = fmt.Errorf("not implemented")
 )
 
 func (f *Field) Validate(value interface{}) error {
