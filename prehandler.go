@@ -13,9 +13,9 @@ import (
 func validationMiddleware(spec Spec) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val := spec.Validate
-		if val.Query != nil {
+		if val.Query.kind == KindObject { // not sure how any other type makes sense
 			values := c.Request.URL.Query()
-			for field, schema := range val.Query {
+			for field, schema := range val.Query.obj {
 				// query values are always strings, so we must try to convert
 				queryValue := values.Get(field)
 
@@ -31,13 +31,13 @@ func validationMiddleware(spec Spec) gin.HandlerFunc {
 			}
 		}
 
-		if val.Body != nil {
+		if val.Body.kind == KindObject {
 			var body map[string]interface{}
 			if err := c.BindJSON(&body); err != nil {
 				c.AbortWithStatusJSON(400, err.Error())
 				return
 			}
-			for field, schema := range val.Body {
+			for field, schema := range val.Body.obj {
 				value := body[field]
 				if value == nil {
 					if schema.required != nil && *schema.required {
@@ -74,8 +74,8 @@ func validationMiddleware(spec Spec) gin.HandlerFunc {
 			c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
 		}
 
-		if val.Path != nil {
-			for field, schema := range val.Path {
+		if val.Path.kind == KindObject {
+			for field, schema := range val.Path.obj {
 				path := c.Param(field)
 
 				convertedValue, err := convert(path, schema)

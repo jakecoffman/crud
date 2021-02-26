@@ -170,7 +170,7 @@ func TestQueryValidation(t *testing.T) {
 
 	for _, test := range tests {
 		handler := validationMiddleware(Spec{
-			Validate: Validate{Query: test.Schema},
+			Validate: Validate{Query: Object(test.Schema)},
 		})
 
 		w, c := query(test.Input)
@@ -241,7 +241,7 @@ func TestBodyValidation(t *testing.T) {
 
 	for _, test := range tests {
 		handler := validationMiddleware(Spec{
-			Validate: Validate{Body: test.Schema},
+			Validate: Validate{Body: Object(test.Schema)},
 		})
 
 		w, c := body(test.Input)
@@ -299,7 +299,7 @@ func TestPathValidation(t *testing.T) {
 
 	for _, test := range tests {
 		handler := validationMiddleware(Spec{
-			Validate: Validate{Path: test.Schema},
+			Validate: Validate{Path: Object(test.Schema)},
 		})
 
 		w, c := path(test.Input)

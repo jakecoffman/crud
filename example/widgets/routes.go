@@ -13,9 +13,9 @@ var Routes = []crud.Spec{{
 	Description: "Lists widgets",
 	Tags:        tags,
 	Validate: crud.Validate{
-		Query: map[string]crud.Field{
+		Query: crud.Object(map[string]crud.Field{
 			"limit": crud.Number().Required().Min(0).Max(25).Description("Records to return"),
-		},
+		}),
 	},
 }, {
 	Method:      "POST",
@@ -24,9 +24,9 @@ var Routes = []crud.Spec{{
 	Description: "Adds a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
-		Body: map[string]crud.Field{
+		Body: crud.Object(map[string]crud.Field{
 			"name": crud.String().Required().Example("Bob"),
-		},
+		}),
 	},
 }, {
 	Method:      "GET",
@@ -35,9 +35,9 @@ var Routes = []crud.Spec{{
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"id": crud.Number().Required(),
-		},
+		}),
 	},
 }, {
 	Method:      "PUT",
@@ -46,12 +46,12 @@ var Routes = []crud.Spec{{
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"id": crud.Number().Required(),
-		},
-		Body: map[string]crud.Field{
+		}),
+		Body: crud.Object(map[string]crud.Field{
 			"name": crud.String().Required(),
-		},
+		}),
 	},
 }, {
 	Method:      "DELETE",
@@ -60,9 +60,9 @@ var Routes = []crud.Spec{{
 	Description: "Deletes a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"id": crud.Number().Required(),
-		},
+		}),
 	},
 },
 }

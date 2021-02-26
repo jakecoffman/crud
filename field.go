@@ -6,12 +6,17 @@ import (
 
 type Field struct {
 	kind        string
+	obj         map[string]Field
 	max         *float64
 	min         *float64
 	required    *bool
 	example     interface{}
 	description string
 	enum        enum
+}
+
+func (f Field) Initialized() bool {
+	return f.kind != ""
 }
 
 type enum []interface{}
@@ -90,6 +95,7 @@ const (
 	KindNumber  = "number"
 	KindString  = "string"
 	KindBoolean = "boolean"
+	KindObject  = "object"
 	KindArray   = "array"
 	KindFile    = "file"
 	KindInteger = "integer"
@@ -105,6 +111,10 @@ func String() Field {
 
 func Boolean() Field {
 	return Field{kind: KindBoolean}
+}
+
+func Object(obj map[string]Field) Field {
+	return Field{kind: KindObject, obj: obj}
 }
 
 func Array() Field {
@@ -150,29 +160,50 @@ func (f Field) Enum(values ...interface{}) Field {
 	return f
 }
 
-func ToJsonSchema(fields map[string]Field) JsonSchema {
-	schema := JsonSchema{
-		Type:       "object",
-		Properties: map[string]JsonSchema{},
+func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
+	switch field.kind {
+	case KindObject:
+		for name, field := range field.obj {
+			param := Parameter{
+				In:          in,
+				Name:        name,
+				Type:        field.kind,
+				Required:    field.required,
+				Description: field.description,
+				Enum:        field.enum,
+				Minimum:     field.min,
+				Maximum:     field.max,
+			}
+			parameters = append(parameters, param)
+		}
 	}
+	return
+}
 
-	for name, field := range fields {
-		prop := JsonSchema{
-			Type:        field.kind,
-			Example:     field.example,
-			Description: field.description,
+func ToJsonSchema(field Field) JsonSchema {
+	schema := JsonSchema{}
+
+	switch field.kind {
+	case KindObject:
+		schema.Type = "object"
+		schema.Properties = map[string]JsonSchema{}
+		for name, field := range field.obj {
+			prop := JsonSchema{
+				Type:        field.kind,
+				Example:     field.example,
+				Description: field.description,
+			}
+			if field.required != nil && *field.required {
+				schema.Required = append(schema.Required, name)
+			}
+			if field.min != nil {
+				prop.Minimum = *field.min
+			}
+			if field.max != nil {
+				prop.Maximum = *field.max
+			}
+			schema.Properties[name] = prop
 		}
-		if field.required != nil && *field.required {
-			schema.Required = append(schema.Required, name)
-		}
-		if field.min != nil {
-			prop.Minimum = *field.min
-		}
-		if field.max != nil {
-			prop.Maximum = *field.max
-		}
-		schema.Properties[name] = prop
 	}
-
 	return schema
 }

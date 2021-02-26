@@ -88,37 +88,23 @@ func (r *Router) Add(specs ...Spec) error {
 		operation.Description = spec.Description
 		operation.Summary = spec.Summary
 
-		if spec.Validate.Path != nil {
-			for name, field := range spec.Validate.Path {
-				param := Parameter{
-					In:          "path",
-					Name:        name,
-					Type:        field.kind,
-					Required:    field.required,
-					Description: field.description,
-					Enum:        field.enum,
-					Minimum:     field.min,
-					Maximum:     field.max,
-				}
-				operation.Parameters = append(operation.Parameters, param)
-			}
+		if spec.Validate.Path.Initialized() {
+			params := ToSwaggerParameters(spec.Validate.Path, "path")
+			operation.Parameters = append(operation.Parameters, params...)
 		}
-		if spec.Validate.Query != nil {
-			for name, field := range spec.Validate.Query {
-				param := Parameter{
-					In:          "query",
-					Name:        name,
-					Type:        field.kind,
-					Required:    field.required,
-					Description: field.description,
-					Enum:        field.enum,
-					Minimum:     field.min,
-					Maximum:     field.max,
-				}
-				operation.Parameters = append(operation.Parameters, param)
-			}
+		if spec.Validate.Query.Initialized() {
+			params := ToSwaggerParameters(spec.Validate.Query, "query")
+			operation.Parameters = append(operation.Parameters, params...)
 		}
-		if spec.Validate.Body != nil {
+		if spec.Validate.Header.Initialized() {
+			params := ToSwaggerParameters(spec.Validate.Header, "header")
+			operation.Parameters = append(operation.Parameters, params...)
+		}
+		if spec.Validate.FormData.Initialized() {
+			params := ToSwaggerParameters(spec.Validate.Header, "formData")
+			operation.Parameters = append(operation.Parameters, params...)
+		}
+		if spec.Validate.Body.Initialized() {
 			modelName := fmt.Sprintf("Model %v", r.modelCounter)
 			parameter := Parameter{
 				In:     "body",
@@ -165,15 +151,19 @@ var methods = map[string]struct{}{
 	"patch":   {},
 }
 
+// Valid returns errors if the spec itself isn't valid. This helps finds bugs early.
 func (s Spec) Valid() error {
 	if _, ok := methods[strings.ToLower(s.Method)]; !ok {
 		return fmt.Errorf("invalid method '%v'", s.Method)
 	}
 
-	if s.Validate.Path != nil {
+	if s.Validate.Path.Initialized() {
 		params := pathParms(s.Path)
+		if len(params) > 0 && s.Validate.Path.kind != KindObject {
+			return fmt.Errorf("path must be an object")
+		}
 		// not ideal complexity but path params should be pretty small n
-		for name := range s.Validate.Path {
+		for name := range s.Validate.Path.obj {
 			var found bool
 			for _, param := range params {
 				if name == param {
@@ -193,11 +183,11 @@ func (s Spec) Valid() error {
 // Validate are optional fields that will be used during validation. Leave unneeded
 // properties nil and they will be ignored.
 type Validate struct {
-	Query    map[string]Field
-	Body     map[string]Field
-	Path     map[string]Field
-	FormData map[string]Field
-	Header   map[string]Field
+	Query    Field
+	Body     Field
+	Path     Field
+	FormData Field
+	Header   Field
 }
 
 // Serve installs the swagger and the swagger-ui and runs the server.
