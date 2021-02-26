@@ -13,6 +13,7 @@ type Field struct {
 	example     interface{}
 	description string
 	enum        enum
+	_default    interface{}
 }
 
 func (f Field) Initialized() bool {
@@ -101,60 +102,73 @@ const (
 	KindInteger = "integer"
 )
 
+// Number creates a field with floating point type
 func Number() Field {
 	return Field{kind: KindNumber}
 }
 
+// String creates a field with string type
 func String() Field {
 	return Field{kind: KindString}
 }
 
+// Boolean creates a field with boolean type
 func Boolean() Field {
 	return Field{kind: KindBoolean}
 }
 
+// Object creates a field with object type
 func Object(obj map[string]Field) Field {
 	return Field{kind: KindObject, obj: obj}
 }
 
+// Array creates a field with array type
 func Array() Field {
 	return Field{kind: KindArray}
 }
 
+// File creates a field with file type
 func File() Field {
 	return Field{kind: KindFile}
 }
 
+// Integer creates a field with integer type
 func Integer() Field {
 	return Field{kind: KindInteger}
 }
 
+// Min specifies a minimum value for this field
 func (f Field) Min(min float64) Field {
 	f.min = &min
 	return f
 }
 
+// Max specifies a maximum value for this field
 func (f Field) Max(max float64) Field {
 	f.max = &max
 	return f
 }
 
+// Required specifies the field must be provided
 func (f Field) Required() Field {
 	required := true
 	f.required = &required
 	return f
 }
 
+// Example specifies an example value for the swagger to display
 func (f Field) Example(ex interface{}) Field {
 	f.example = ex
 	return f
 }
 
+// Description specifies a human-readable explanation of the field
 func (f Field) Description(description string) Field {
 	f.description = description
 	return f
 }
 
+// Enum restricts the field's values to the set of values specified
 func (f Field) Enum(values ...interface{}) Field {
 	f.enum = values
 	return f
@@ -170,6 +184,7 @@ func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 				Type:        field.kind,
 				Required:    field.required,
 				Description: field.description,
+				Default:     field._default,
 				Enum:        field.enum,
 				Minimum:     field.min,
 				Maximum:     field.max,
@@ -192,6 +207,7 @@ func ToJsonSchema(field Field) JsonSchema {
 				Type:        field.kind,
 				Example:     field.example,
 				Description: field.description,
+				Default:     field._default,
 			}
 			if field.required != nil && *field.required {
 				schema.Required = append(schema.Required, name)

@@ -22,6 +22,7 @@ type JsonSchema struct {
 	Minimum     float64               `json:"minimum,omitempty"`
 	Maximum     float64               `json:"maximum,omitempty"`
 	Enum        []interface{}         `json:"enum,omitempty"`
+	Default     interface{}           `json:"default"`
 }
 
 type Path struct {
@@ -52,6 +53,7 @@ type Parameter struct {
 	Minimum     *float64      `json:"minimum,omitempty"`
 	Maximum     *float64      `json:"maximum,omitempty"`
 	Enum        []interface{} `json:"enum,omitempty"`
+	Default     interface{}   `json:"default,omitempty"`
 }
 
 type Ref struct {
