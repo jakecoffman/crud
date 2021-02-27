@@ -33,12 +33,11 @@ func (e enum) Has(needle interface{}) bool {
 }
 
 var (
-	ErrRequired       = fmt.Errorf("value is required")
-	ErrWrongType      = fmt.Errorf("wrong type passed")
-	ErrMaximum        = fmt.Errorf("maximum exceeded")
-	ErrMinimum        = fmt.Errorf("minumum exceeded")
-	ErrNotImplemented = fmt.Errorf("not implemented")
-	ErrEnumNotFound   = fmt.Errorf("value not in enum")
+	ErrRequired     = fmt.Errorf("value is required")
+	ErrWrongType    = fmt.Errorf("wrong type passed")
+	ErrMaximum      = fmt.Errorf("maximum exceeded")
+	ErrMinimum      = fmt.Errorf("minumum exceeded")
+	ErrEnumNotFound = fmt.Errorf("value not in enum")
 )
 
 func (f *Field) Validate(value interface{}) error {
@@ -189,34 +188,34 @@ func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 	case KindArray:
 		items := ToJsonSchema(*field.arr)
 		parameters = append(parameters, Parameter{
-			In:          in,
-			Type:        field.kind,
-			Items:       &items,
-			Required:    field.required,
-			Description: field.description,
-			Default:     field._default,
+			In:               in,
+			Type:             field.kind,
+			Items:            &items,
+			CollectionFormat: "multi",
+			Required:         field.required,
+			Description:      field.description,
+			Default:          field._default,
 		})
 	case KindObject:
 		for name, field := range field.obj {
-			var items *JsonSchema
-			if field.kind == KindArray {
-				temp := ToJsonSchema(*field.arr)
-				items = &temp
-			}
-			if field.kind == KindObject {
-				// TODO
-			}
 			param := Parameter{
 				In:          in,
 				Name:        name,
 				Type:        field.kind,
-				Items:       items,
 				Required:    field.required,
 				Description: field.description,
 				Default:     field._default,
 				Enum:        field.enum,
 				Minimum:     field.min,
 				Maximum:     field.max,
+			}
+			if field.kind == KindArray {
+				temp := ToJsonSchema(*field.arr)
+				param.Items = &temp
+				param.CollectionFormat = "multi"
+			}
+			if field.kind == KindObject {
+				// TODO
 			}
 			parameters = append(parameters, param)
 		}

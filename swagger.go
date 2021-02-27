@@ -50,13 +50,14 @@ type Parameter struct {
 	Type   string `json:"type,omitempty"`
 	Schema *Ref   `json:"schema,omitempty"`
 
-	Required    *bool         `json:"required,omitempty"`
-	Description string        `json:"description,omitempty"`
-	Minimum     *float64      `json:"minimum,omitempty"`
-	Maximum     *float64      `json:"maximum,omitempty"`
-	Enum        []interface{} `json:"enum,omitempty"`
-	Default     interface{}   `json:"default,omitempty"`
-	Items       *JsonSchema   `json:"items,omitempty"`
+	Required         *bool         `json:"required,omitempty"`
+	Description      string        `json:"description,omitempty"`
+	Minimum          *float64      `json:"minimum,omitempty"`
+	Maximum          *float64      `json:"maximum,omitempty"`
+	Enum             []interface{} `json:"enum,omitempty"`
+	Default          interface{}   `json:"default,omitempty"`
+	Items            *JsonSchema   `json:"items,omitempty"`
+	CollectionFormat string        `json:"collectionFormat,omitempty"`
 }
 
 type Ref struct {
