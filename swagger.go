@@ -26,11 +26,12 @@ type JsonSchema struct {
 }
 
 type Path struct {
-	Get    *Operation `json:"get,omitempty"`
-	Post   *Operation `json:"post,omitempty"`
-	Put    *Operation `json:"put,omitempty"`
-	Delete *Operation `json:"delete,omitempty"`
-	Patch  *Operation `json:"patch,omitempty"`
+	Get     *Operation `json:"get,omitempty"`
+	Post    *Operation `json:"post,omitempty"`
+	Put     *Operation `json:"put,omitempty"`
+	Delete  *Operation `json:"delete,omitempty"`
+	Patch   *Operation `json:"patch,omitempty"`
+	Options *Operation `json:"options,omitempty"`
 }
 
 type Operation struct {

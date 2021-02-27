@@ -74,6 +74,12 @@ func (r *Router) Add(specs ...Spec) error {
 			}
 			path.Patch = &Operation{}
 			operation = path.Patch
+		case "options":
+			if path.Options != nil {
+				return fmt.Errorf("duplicate PATCH on route %v", spec.Path)
+			}
+			path.Options = &Operation{}
+			operation = path.Options
 		case "delete":
 			if path.Delete != nil {
 				return fmt.Errorf("duplicate DELETE on route %v", spec.Path)
@@ -123,60 +129,6 @@ func (r *Router) Add(specs ...Spec) error {
 
 		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
 	}
-	return nil
-}
-
-// Spec is used to generate swagger paths and automatic handler validation.
-type Spec struct {
-	Method      string
-	Path        string
-	PreHandlers []gin.HandlerFunc
-	Handler     gin.HandlerFunc
-	Description string
-	Tags        []string
-	Summary     string
-
-	Validate Validate
-}
-
-var methods = map[string]struct{}{
-	"get":     {},
-	"head":    {},
-	"post":    {},
-	"put":     {},
-	"delete":  {},
-	"connect": {},
-	"options": {},
-	"trace":   {},
-	"patch":   {},
-}
-
-// Valid returns errors if the spec itself isn't valid. This helps finds bugs early.
-func (s Spec) Valid() error {
-	if _, ok := methods[strings.ToLower(s.Method)]; !ok {
-		return fmt.Errorf("invalid method '%v'", s.Method)
-	}
-
-	if s.Validate.Path.Initialized() {
-		params := pathParms(s.Path)
-		if len(params) > 0 && s.Validate.Path.kind != KindObject {
-			return fmt.Errorf("path must be an object")
-		}
-		// not ideal complexity but path params should be pretty small n
-		for name := range s.Validate.Path.obj {
-			var found bool
-			for _, param := range params {
-				if name == param {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return fmt.Errorf("missing path param '%v' in url: '%v'", name, s.Path)
-			}
-		}
-	}
-
 	return nil
 }
 

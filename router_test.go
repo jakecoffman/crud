@@ -11,21 +11,8 @@ func TestSwaggerToGin(t *testing.T) {
 	}
 }
 
-func TestValidationOnAdd(t *testing.T) {
+func TestDuplicateRouteError(t *testing.T) {
 	r := NewRouter("", "")
-	if err := r.Add(Spec{}); err == nil {
-		t.Errorf("expected error")
-	}
-
-	if err := r.Add(Spec{
-		Method: "GET",
-		Path:   "/widgets",
-		Validate: Validate{Path: Object(map[string]Field{
-			"id": Number(),
-		})},
-	}); err == nil {
-		t.Errorf("expected error")
-	}
 
 	if err := r.Add(Spec{
 		Method: "GET",
