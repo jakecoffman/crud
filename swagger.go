@@ -16,13 +16,14 @@ type Info struct {
 type JsonSchema struct {
 	Type        string                `json:"type,omitempty"`
 	Properties  map[string]JsonSchema `json:"properties,omitempty"`
+	Items       *JsonSchema           `json:"items,omitempty"`
 	Required    []string              `json:"required,omitempty"`
 	Example     interface{}           `json:"example,omitempty"`
 	Description string                `json:"description,omitempty"`
 	Minimum     float64               `json:"minimum,omitempty"`
 	Maximum     float64               `json:"maximum,omitempty"`
 	Enum        []interface{}         `json:"enum,omitempty"`
-	Default     interface{}           `json:"default"`
+	Default     interface{}           `json:"default,omitempty"`
 }
 
 type Path struct {
@@ -55,6 +56,7 @@ type Parameter struct {
 	Maximum     *float64      `json:"maximum,omitempty"`
 	Enum        []interface{} `json:"enum,omitempty"`
 	Default     interface{}   `json:"default,omitempty"`
+	Items       *JsonSchema   `json:"items,omitempty"`
 }
 
 type Ref struct {

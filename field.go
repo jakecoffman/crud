@@ -14,6 +14,7 @@ type Field struct {
 	description string
 	enum        enum
 	_default    interface{}
+	arr         *Field
 }
 
 func (f Field) Initialized() bool {
@@ -174,14 +175,42 @@ func (f Field) Enum(values ...interface{}) Field {
 	return f
 }
 
+// Items specifies the type of elements of an array
+func (f Field) Items(item Field) Field {
+	if f.kind != KindArray {
+		panic("Items can only be used with array types")
+	}
+	f.arr = &item
+	return f
+}
+
 func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 	switch field.kind {
+	case KindArray:
+		items := ToJsonSchema(*field.arr)
+		parameters = append(parameters, Parameter{
+			In:          in,
+			Type:        field.kind,
+			Items:       &items,
+			Required:    field.required,
+			Description: field.description,
+			Default:     field._default,
+		})
 	case KindObject:
 		for name, field := range field.obj {
+			var items *JsonSchema
+			if field.kind == KindArray {
+				temp := ToJsonSchema(*field.arr)
+				items = &temp
+			}
+			if field.kind == KindObject {
+				// TODO
+			}
 			param := Parameter{
 				In:          in,
 				Name:        name,
 				Type:        field.kind,
+				Items:       items,
 				Required:    field.required,
 				Description: field.description,
 				Default:     field._default,
@@ -196,11 +225,15 @@ func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 }
 
 func ToJsonSchema(field Field) JsonSchema {
-	schema := JsonSchema{}
+	schema := JsonSchema{
+		Type: field.kind,
+	}
 
 	switch field.kind {
+	case KindArray:
+		items := ToJsonSchema(*field.arr)
+		schema.Items = &items
 	case KindObject:
-		schema.Type = "object"
 		schema.Properties = map[string]JsonSchema{}
 		for name, field := range field.obj {
 			prop := JsonSchema{
@@ -217,6 +250,10 @@ func ToJsonSchema(field Field) JsonSchema {
 			}
 			if field.max != nil {
 				prop.Maximum = *field.max
+			}
+			if prop.Type == KindArray {
+				items := ToJsonSchema(*field.arr)
+				prop.Items = &items
 			}
 			schema.Properties[name] = prop
 		}

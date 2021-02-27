@@ -17,16 +17,29 @@ func validationMiddleware(spec Spec) gin.HandlerFunc {
 			values := c.Request.URL.Query()
 			for field, schema := range val.Query.obj {
 				// query values are always strings, so we must try to convert
-				queryValue := values.Get(field)
+				queryValue := values[field]
 
-				convertedValue, err := convert(queryValue, schema)
-				if err != nil {
-					c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
-					return
-				}
-				if err = schema.Validate(convertedValue); err != nil {
-					c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
-					return
+				if len(queryValue) == 0 {
+					if schema.required != nil && *schema.required {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrRequired))
+						return
+					}
+				} else if len(queryValue) > 1 {
+					if schema.arr == nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, ErrWrongType))
+						return
+					}
+					// TODO validate each item in the array
+				} else {
+					convertedValue, err := convert(queryValue[0], schema)
+					if err != nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
+						return
+					}
+					if err = schema.Validate(convertedValue); err != nil {
+						c.AbortWithStatusJSON(400, fmt.Sprintf("Query validation failed for field %v: %v", field, err.Error()))
+						return
+					}
 				}
 			}
 		}
@@ -151,8 +164,7 @@ func convert(inputValue string, schema Field) (interface{}, error) {
 			return nil, ErrWrongType
 		}
 	case KindArray:
-		// TODO I'm not sure how this works yet
-		return nil, ErrNotImplemented
+		// TODO convert each item in the array
 	default:
 		return nil, fmt.Errorf("unknown kind: %v", schema.kind)
 	}

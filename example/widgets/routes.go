@@ -15,6 +15,7 @@ var Routes = []crud.Spec{{
 	Validate: crud.Validate{
 		Query: crud.Object(map[string]crud.Field{
 			"limit": crud.Number().Required().Min(0).Max(25).Description("Records to return"),
+			"ids":   crud.Array().Items(crud.Number()),
 		}),
 	},
 }, {
@@ -25,7 +26,8 @@ var Routes = []crud.Spec{{
 	Tags:        tags,
 	Validate: crud.Validate{
 		Body: crud.Object(map[string]crud.Field{
-			"name": crud.String().Required().Example("Bob"),
+			"name":       crud.String().Required().Example("Bob"),
+			"arrayMatey": crud.Array().Items(crud.Number()),
 		}),
 	},
 }, {
