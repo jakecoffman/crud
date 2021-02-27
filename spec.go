@@ -24,6 +24,8 @@ type Spec struct {
 	Summary string
 	// Validate is used to automatically validate the various inputs to the endpoint
 	Validate Validate
+	// Responses specifies the responses in Swagger. If none provided a default is used.
+	Responses map[string]Response
 }
 
 var methods = map[string]struct{}{

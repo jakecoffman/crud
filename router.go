@@ -90,6 +90,9 @@ func (r *Router) Add(specs ...Spec) error {
 			panic("Unhandled method " + spec.Method)
 		}
 		operation.Responses = DefaultResponse
+		if spec.Responses != nil {
+			operation.Responses = spec.Responses
+		}
 		operation.Tags = spec.Tags
 		operation.Description = spec.Description
 		operation.Summary = spec.Summary

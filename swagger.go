@@ -67,6 +67,10 @@ type Ref struct {
 type Response struct {
 	Schema      JsonSchema `json:"schema"`
 	Description string     `json:"description"`
+
+	Example interface{}       `json:"interface,omitempty"`
+	Ref     *Ref              `json:"$ref,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
 }
 
 var DefaultResponse = map[string]Response{
