@@ -189,6 +189,58 @@ func body(payload string) (*httptest.ResponseRecorder, *gin.Context) {
 	return w, c
 }
 
+func TestSimpleBodyValidation(t *testing.T) {
+	tests := []struct {
+		Schema   Field
+		Input    string
+		Expected int
+	}{
+		{
+			Schema:   Number(),
+			Input:    "1",
+			Expected: 200,
+		},
+		{
+			Schema:   Number(),
+			Input:    "a",
+			Expected: 400,
+		},
+		{
+			Schema:   String(),
+			Input:    `"2"`,
+			Expected: 200,
+		},
+		{
+			Schema:   Boolean(),
+			Input:    `true`,
+			Expected: 200,
+		},
+		{
+			Schema:   Boolean(),
+			Input:    `false`,
+			Expected: 200,
+		},
+		{
+			Schema:   Boolean(),
+			Input:    `1`,
+			Expected: 400,
+		},
+	}
+
+	for _, test := range tests {
+		handler := validationMiddleware(Spec{
+			Validate: Validate{Body: test.Schema},
+		})
+
+		w, c := body(test.Input)
+		handler(c)
+
+		if w.Result().StatusCode != test.Expected {
+			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, w.Code, test.Input, test.Schema)
+		}
+	}
+}
+
 func TestBodyValidation(t *testing.T) {
 	tests := []struct {
 		Schema   map[string]Field
