@@ -25,7 +25,7 @@ func validationMiddleware(spec Spec) gin.HandlerFunc {
 			}
 		}
 
-		if val.Body.Initialized() {
+		if val.Body.Initialized() && val.Body.kind != KindFile {
 			if err := c.BindJSON(&body); err != nil {
 				c.AbortWithStatusJSON(400, err.Error())
 				return
