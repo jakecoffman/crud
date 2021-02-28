@@ -98,19 +98,19 @@ func (r *Router) Add(specs ...Spec) error {
 		operation.Summary = spec.Summary
 
 		if spec.Validate.Path.Initialized() {
-			params := ToSwaggerParameters(spec.Validate.Path, "path")
+			params := spec.Validate.Path.ToSwaggerParameters("path")
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Query.Initialized() {
-			params := ToSwaggerParameters(spec.Validate.Query, "query")
+			params := spec.Validate.Query.ToSwaggerParameters("query")
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Header.Initialized() {
-			params := ToSwaggerParameters(spec.Validate.Header, "header")
+			params := spec.Validate.Header.ToSwaggerParameters("header")
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.FormData.Initialized() {
-			params := ToSwaggerParameters(spec.Validate.Header, "formData")
+			params := spec.Validate.FormData.ToSwaggerParameters("formData")
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Body.Initialized() {
@@ -120,7 +120,7 @@ func (r *Router) Add(specs ...Spec) error {
 				Name:   "body",
 				Schema: &Ref{fmt.Sprint("#/definitions/", modelName)},
 			}
-			r.Swagger.Definitions[modelName] = ToJsonSchema(spec.Validate.Body)
+			r.Swagger.Definitions[modelName] = spec.Validate.Body.ToJsonSchema()
 			r.modelCounter++
 			operation.Parameters = append(operation.Parameters, parameter)
 		}

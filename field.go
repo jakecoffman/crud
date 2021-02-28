@@ -199,21 +199,22 @@ func (f Field) Items(item Field) Field {
 	return f
 }
 
-func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
-	switch field.kind {
+// ToSwaggerParameters transforms a field into a slice of Parameter.
+func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
+	switch f.kind {
 	case KindArray:
-		items := ToJsonSchema(*field.arr)
+		items := f.arr.ToJsonSchema()
 		parameters = append(parameters, Parameter{
 			In:               in,
-			Type:             field.kind,
+			Type:             f.kind,
 			Items:            &items,
 			CollectionFormat: "multi",
-			Required:         field.required,
-			Description:      field.description,
-			Default:          field._default,
+			Required:         f.required,
+			Description:      f.description,
+			Default:          f._default,
 		})
 	case KindObject:
-		for name, field := range field.obj {
+		for name, field := range f.obj {
 			param := Parameter{
 				In:          in,
 				Name:        name,
@@ -226,7 +227,7 @@ func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 				Maximum:     field.max,
 			}
 			if field.kind == KindArray {
-				temp := ToJsonSchema(*field.arr)
+				temp := field.arr.ToJsonSchema()
 				param.Items = &temp
 				param.CollectionFormat = "multi"
 			}
@@ -239,18 +240,19 @@ func ToSwaggerParameters(field Field, in string) (parameters []Parameter) {
 	return
 }
 
-func ToJsonSchema(field Field) JsonSchema {
+// ToJsonSchema transforms a field into a JsonSchema.
+func (f *Field) ToJsonSchema() JsonSchema {
 	schema := JsonSchema{
-		Type: field.kind,
+		Type: f.kind,
 	}
 
-	switch field.kind {
+	switch f.kind {
 	case KindArray:
-		items := ToJsonSchema(*field.arr)
+		items := f.arr.ToJsonSchema()
 		schema.Items = &items
 	case KindObject:
 		schema.Properties = map[string]JsonSchema{}
-		for name, field := range field.obj {
+		for name, field := range f.obj {
 			prop := JsonSchema{
 				Type:        field.kind,
 				Example:     field.example,
@@ -267,7 +269,7 @@ func ToJsonSchema(field Field) JsonSchema {
 				prop.Maximum = *field.max
 			}
 			if prop.Type == KindArray {
-				items := ToJsonSchema(*field.arr)
+				items := field.arr.ToJsonSchema()
 				prop.Items = &items
 			}
 			schema.Properties[name] = prop
