@@ -5,7 +5,7 @@
 
 A Swagger/OpenAPI builder and validation library for servers.
 
-Heavily inspired by [hapijs](https://hapi.dev/) and the [hapijs-swagger](https://github.com/glennjones/hapi-swagger) projects.
+Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://github.com/glennjones/hapi-swagger) projects.
 
 ### Status
 
