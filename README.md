@@ -1,5 +1,8 @@
 ## crud
 
+[![GoDoc](https://godoc.org/github.com/jakecoffman/crud?status.svg)](https://godoc.org/github.com/jakecoffman/crud)
+[![Go](https://github.com/jakecoffman/crud/actions/workflows/go.yml/badge.svg)](https://github.com/jakecoffman/crud/actions/workflows/go.yml)
+
 A Swagger/OpenAPI builder and validation library for servers.
 
 Heavily inspired by [hapijs](https://hapi.dev/) and the [hapijs-swagger](https://github.com/glennjones/hapi-swagger) projects.
