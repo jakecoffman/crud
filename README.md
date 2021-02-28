@@ -45,7 +45,7 @@ Routes are specifications that look like this:
 crud.Spec{
 	Method:      "PATCH",
 	Path:        "/widgets/{id}",
-	PreHandlers: []gin.HandlerFunc{Auth}
+	PreHandlers: []gin.HandlerFunc{Auth},
 	Handler:     CreateHandler,
 	Description: "Adds a widget",
 	Tags:        []string{"Widgets"},
@@ -62,4 +62,4 @@ crud.Spec{
 
 This will add a route `/widgets/:id` that responds to the PATCH method. It generates swagger and serves it at the root of the web application. It validates that the ID in the path is a number, so you don't have to. It also validates that the body is an object and has an "owner" property that is a string, again so you won't have to.
 
-The `preHandlers` run before validation, and the `Handler` runs after validation is successful.
+The `PreHandlers` run before validation, and the `Handler` runs after validation is successful.
