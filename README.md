@@ -9,9 +9,9 @@ Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://git
 
 ### Status
 
-This project is not stable yet, API is still changing and there are missing features.
+This project is not stable yet, API is still changing and there are MANY missing features.
 
-It's already pretty useful so if you are not risk averse then use it and pitch in!
+That being said, it's already pretty useful! If you are not risk averse then use it and pitch in!
 
 ### Why
 
