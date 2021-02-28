@@ -50,7 +50,7 @@ var (
 	ErrRequired     = fmt.Errorf("value is required")
 	ErrWrongType    = fmt.Errorf("wrong type passed")
 	ErrMaximum      = fmt.Errorf("maximum exceeded")
-	ErrMinimum      = fmt.Errorf("minumum exceeded")
+	ErrMinimum      = fmt.Errorf("minimum exceeded")
 	ErrEnumNotFound = fmt.Errorf("value not in enum")
 )
 
