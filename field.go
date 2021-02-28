@@ -2,8 +2,10 @@ package crud
 
 import (
 	"fmt"
+	"strings"
 )
 
+// Field allows specification of swagger or json schema types using the builder pattern.
 type Field struct {
 	kind        string
 	obj         map[string]Field
@@ -17,13 +19,25 @@ type Field struct {
 	arr         *Field
 }
 
+func (f Field) String() string {
+	var str strings.Builder
+	str.WriteString(fmt.Sprintf("{Field: '%v'", f.kind))
+	if f.required != nil {
+		str.WriteString(" required")
+	}
+	str.WriteString("}")
+	return str.String()
+}
+
+// Initialized returns true if the field has been initialized with Number, String, etc.
+// When the Swagger is being built, often an uninitialized field will be ignored.
 func (f Field) Initialized() bool {
 	return f.kind != ""
 }
 
 type enum []interface{}
 
-func (e enum) Has(needle interface{}) bool {
+func (e enum) has(needle interface{}) bool {
 	for _, value := range e {
 		if value == needle {
 			return true
@@ -40,6 +54,8 @@ var (
 	ErrEnumNotFound = fmt.Errorf("value not in enum")
 )
 
+// Validate is used in the validation middleware to tell if the value passed
+// into the controller meets the restrictions set on the field.
 func (f *Field) Validate(value interface{}) error {
 	if value == nil && f.required != nil && *f.required {
 		return ErrRequired
@@ -85,7 +101,7 @@ func (f *Field) Validate(value interface{}) error {
 		return fmt.Errorf("unhandled type %v", v)
 	}
 
-	if f.enum != nil && !f.enum.Has(value) {
+	if f.enum != nil && !f.enum.has(value) {
 		return ErrEnumNotFound
 	}
 
