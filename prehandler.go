@@ -53,11 +53,11 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 
 			if len(queryValue) == 0 {
 				if schema.required != nil && *schema.required {
-					return fmt.Errorf("query validation failed for field %v: %v", field, ErrRequired)
+					return fmt.Errorf("query validation failed for field %v: %v", field, errRequired)
 				}
 			} else if len(queryValue) > 1 {
 				if schema.arr == nil {
-					return fmt.Errorf("query validation failed for field %v: %v", field, ErrWrongType)
+					return fmt.Errorf("query validation failed for field %v: %v", field, errWrongType)
 				}
 				// TODO validate each item in the array
 			} else {
@@ -95,7 +95,7 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 				value := v[field]
 				if value == nil {
 					if schema.required != nil && *schema.required {
-						return fmt.Errorf("body validation failed for field %v: %v", field, ErrRequired)
+						return fmt.Errorf("body validation failed for field %v: %v", field, errRequired)
 					}
 					continue
 				}
@@ -108,11 +108,11 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 						v := value.(float64)
 						// check to see if the number can be represented as an integer
 						if v != float64(int64(v)) {
-							return fmt.Errorf("body validation failed for field %v: %v", field, ErrWrongType)
+							return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
 						}
 						value = int(value.(float64))
 					default:
-						return fmt.Errorf("body validation failed for field %v: %v", field, ErrWrongType)
+						return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
 					}
 				}
 				if err := schema.Validate(value); err != nil {
@@ -120,7 +120,7 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 				}
 			}
 		default:
-			return fmt.Errorf("body validation failed: %v", ErrWrongType)
+			return fmt.Errorf("body validation failed: %v", errWrongType)
 		}
 	}
 
@@ -145,7 +145,7 @@ func convert(inputValue string, schema Field) (interface{}, error) {
 	// don't try to convert if the field is empty
 	if inputValue == "" {
 		if schema.required != nil && *schema.required {
-			return nil, ErrRequired
+			return nil, errRequired
 		}
 		return nil, nil
 	}
@@ -157,7 +157,7 @@ func convert(inputValue string, schema Field) (interface{}, error) {
 		} else if inputValue == "false" {
 			convertedValue = false
 		} else {
-			return nil, ErrWrongType
+			return nil, errWrongType
 		}
 	case KindString:
 		convertedValue = inputValue
@@ -165,13 +165,13 @@ func convert(inputValue string, schema Field) (interface{}, error) {
 		var err error
 		convertedValue, err = strconv.ParseFloat(inputValue, 64)
 		if err != nil {
-			return nil, ErrWrongType
+			return nil, errWrongType
 		}
 	case KindInteger:
 		var err error
 		convertedValue, err = strconv.Atoi(inputValue)
 		if err != nil {
-			return nil, ErrWrongType
+			return nil, errWrongType
 		}
 	case KindArray:
 		// TODO convert each item in the array

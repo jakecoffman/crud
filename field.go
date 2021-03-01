@@ -47,18 +47,18 @@ func (e enum) has(needle interface{}) bool {
 }
 
 var (
-	ErrRequired     = fmt.Errorf("value is required")
-	ErrWrongType    = fmt.Errorf("wrong type passed")
-	ErrMaximum      = fmt.Errorf("maximum exceeded")
-	ErrMinimum      = fmt.Errorf("minimum exceeded")
-	ErrEnumNotFound = fmt.Errorf("value not in enum")
+	errRequired     = fmt.Errorf("value is required")
+	errWrongType    = fmt.Errorf("wrong type passed")
+	errMaximum      = fmt.Errorf("maximum exceeded")
+	errMinimum      = fmt.Errorf("minimum exceeded")
+	errEnumNotFound = fmt.Errorf("value not in enum")
 )
 
 // Validate is used in the validation middleware to tell if the value passed
 // into the controller meets the restrictions set on the field.
 func (f *Field) Validate(value interface{}) error {
 	if value == nil && f.required != nil && *f.required {
-		return ErrRequired
+		return errRequired
 	}
 	if value == nil {
 		return nil
@@ -67,47 +67,48 @@ func (f *Field) Validate(value interface{}) error {
 	switch v := value.(type) {
 	case int:
 		if f.kind != "integer" {
-			return ErrWrongType
+			return errWrongType
 		}
 		if f.max != nil && float64(v) > *f.max {
-			return ErrMaximum
+			return errMaximum
 		}
 		if f.min != nil && float64(v) < *f.min {
-			return ErrMinimum
+			return errMinimum
 		}
 	case float64:
 		if f.kind != "number" {
-			return ErrWrongType
+			return errWrongType
 		}
 		if f.max != nil && v > *f.max {
-			return ErrMaximum
+			return errMaximum
 		}
 		if f.min != nil && v < *f.min {
-			return ErrMinimum
+			return errMinimum
 		}
 	case string:
 		if f.kind != "string" {
-			return ErrWrongType
+			return errWrongType
 		}
 	case bool:
 		if f.kind != "boolean" {
-			return ErrWrongType
+			return errWrongType
 		}
 	case []interface{}:
 		if f.kind != "array" {
-			return ErrWrongType
+			return errWrongType
 		}
 	default:
 		return fmt.Errorf("unhandled type %v", v)
 	}
 
 	if f.enum != nil && !f.enum.has(value) {
-		return ErrEnumNotFound
+		return errEnumNotFound
 	}
 
 	return nil
 }
 
+// These kinds correlate to swagger and json types.
 const (
 	KindNumber  = "number"
 	KindString  = "string"
