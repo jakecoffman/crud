@@ -73,7 +73,7 @@ type Response struct {
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
-var DefaultResponse = map[string]Response{
+var defaultResponse = map[string]Response{
 	"default": {
 		Schema:      JsonSchema{Type: "string"},
 		Description: "Successful",
