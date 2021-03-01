@@ -304,6 +304,38 @@ func TestBodyValidation(t *testing.T) {
 			},
 			Input:    `{"obj2":{"inner":"not a number"}}`,
 			Expected: 400,
+		}, {
+			Schema: map[string]Field{
+				"arr1": Array().Items(Number()),
+			},
+			Input:    `{"arr1":[1]}`,
+			Expected: 200,
+		}, {
+			Schema: map[string]Field{
+				"arr2": Array().Items(Number()),
+			},
+			Input:    `{"arr2":["a"]}`,
+			Expected: 400,
+		}, {
+			Schema: map[string]Field{
+				"complex1": Object(map[string]Field{
+					"array": Array().Required().Items(Object(map[string]Field{
+						"id": Number().Required(),
+					})),
+				}).Required(),
+			},
+			Input:    `{"complex1":{"array":[{"id":1}]}}`,
+			Expected: 200,
+		}, {
+			Schema: map[string]Field{
+				"complex2": Object(map[string]Field{
+					"array": Array().Required().Items(Object(map[string]Field{
+						"id": Number().Required(),
+					})),
+				}).Required(),
+			},
+			Input:    `{"complex2":{"array":[{"id":"a"}]}}`,
+			Expected: 400,
 		},
 	}
 

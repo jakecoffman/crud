@@ -73,7 +73,7 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 	}
 
 	if val.Body.Initialized() && val.Body.kind != KindFile {
-		err := validateBody(&val.Body, body)
+		err := validateBody("body", &val.Body, body)
 		if err != nil {
 			return err
 		}
@@ -96,42 +96,49 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 	return nil
 }
 
-func validateBody(field *Field, body interface{}) error {
+func validateBody(name string, field *Field, body interface{}) error {
 	switch v := body.(type) {
 	case nil:
 		if field.required != nil && *field.required {
-			return fmt.Errorf("body validation failed for field %v: %v", field, errRequired)
+			return fmt.Errorf("body validation failed for field %v: %v", name, errRequired)
 		}
 	case string:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed: %v", err.Error())
+			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
 		}
 	case bool:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed: %v", err.Error())
+			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
 		}
 	case float64:
 		if field.kind == KindInteger {
 			// JSON doesn't have integers, so Go treats these fields as float64.
 			// Need to convert to integer before validating it.
 			if v != float64(int64(v)) {
-				return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
+				return fmt.Errorf("body validation failed for field %v: %v", name, errWrongType)
 			}
 			if err := field.Validate(int(v)); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
+				return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
 			}
 		} else {
 			if err := field.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
+				return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
 			}
 		}
 	case []interface{}:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed: %v", err.Error())
+			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+		}
+		if field.arr != nil {
+			for i, item := range v {
+				if err := validateBody(fmt.Sprintf("%v[%v]", name, i), field.arr, item); err != nil {
+					return err
+				}
+			}
 		}
 	case map[string]interface{}:
 		for name, field := range field.obj {
-			if err := validateBody(&field, v[name]); err != nil {
+			if err := validateBody(name, &field, v[name]); err != nil {
 				return err
 			}
 		}
