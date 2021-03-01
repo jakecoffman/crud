@@ -288,6 +288,22 @@ func TestBodyValidation(t *testing.T) {
 			},
 			Input:    `{"float":1.1}`,
 			Expected: 200,
+		}, {
+			Schema: map[string]Field{
+				"obj1": Object(map[string]Field{
+					"inner": Number().Required(),
+				}),
+			},
+			Input:    `{"obj1":{"inner":1}}`,
+			Expected: 200,
+		}, {
+			Schema: map[string]Field{
+				"obj2": Object(map[string]Field{
+					"inner": Number().Required(),
+				}),
+			},
+			Input:    `{"obj2":{"inner":"not a number"}}`,
+			Expected: 400,
 		},
 	}
 

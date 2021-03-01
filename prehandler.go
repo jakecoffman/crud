@@ -73,54 +73,9 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 	}
 
 	if val.Body.Initialized() && val.Body.kind != KindFile {
-		switch v := body.(type) {
-		case string:
-			if err := val.Body.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
-			}
-		case bool:
-			if err := val.Body.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
-			}
-		case float64:
-			if err := val.Body.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
-			}
-		case []interface{}:
-			if err := val.Body.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed: %v", err.Error())
-			}
-		case map[string]interface{}:
-			for field, schema := range val.Body.obj {
-				value := v[field]
-				if value == nil {
-					if schema.required != nil && *schema.required {
-						return fmt.Errorf("body validation failed for field %v: %v", field, errRequired)
-					}
-					continue
-				}
-
-				if schema.kind == KindInteger {
-					// JSON doesn't have integers, so Go treats these fields as float64.
-					// Need to convert to integer before validating it.
-					switch value.(type) {
-					case float64:
-						v := value.(float64)
-						// check to see if the number can be represented as an integer
-						if v != float64(int64(v)) {
-							return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
-						}
-						value = int(value.(float64))
-					default:
-						return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
-					}
-				}
-				if err := schema.Validate(value); err != nil {
-					return fmt.Errorf("body validation failed for field %v: %v", field, err.Error())
-				}
-			}
-		default:
-			return fmt.Errorf("body validation failed: %v", errWrongType)
+		err := validateBody(&val.Body, body)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -138,6 +93,51 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 		}
 	}
 
+	return nil
+}
+
+func validateBody(field *Field, body interface{}) error {
+	switch v := body.(type) {
+	case nil:
+		if field.required != nil && *field.required {
+			return fmt.Errorf("body validation failed for field %v: %v", field, errRequired)
+		}
+	case string:
+		if err := field.Validate(v); err != nil {
+			return fmt.Errorf("body validation failed: %v", err.Error())
+		}
+	case bool:
+		if err := field.Validate(v); err != nil {
+			return fmt.Errorf("body validation failed: %v", err.Error())
+		}
+	case float64:
+		if field.kind == KindInteger {
+			// JSON doesn't have integers, so Go treats these fields as float64.
+			// Need to convert to integer before validating it.
+			if v != float64(int64(v)) {
+				return fmt.Errorf("body validation failed for field %v: %v", field, errWrongType)
+			}
+			if err := field.Validate(int(v)); err != nil {
+				return fmt.Errorf("body validation failed: %v", err.Error())
+			}
+		} else {
+			if err := field.Validate(v); err != nil {
+				return fmt.Errorf("body validation failed: %v", err.Error())
+			}
+		}
+	case []interface{}:
+		if err := field.Validate(v); err != nil {
+			return fmt.Errorf("body validation failed: %v", err.Error())
+		}
+	case map[string]interface{}:
+		for name, field := range field.obj {
+			if err := validateBody(&field, v[name]); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("body validation failed: %v", errWrongType)
+	}
 	return nil
 }
 
