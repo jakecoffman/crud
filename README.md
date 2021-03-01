@@ -51,7 +51,7 @@ crud.Spec{
 	Tags:        []string{"Widgets"},
 	Validate: crud.Validate{
 		Path: crud.Object(map[string]crud.Field{
-			"id": crud.Number().Required().Description("ID of the widget")
+			"id": crud.Number().Required().Description("ID of the widget"),
         }),
 		Body: crud.Object(map[string]crud.Field{
 			"owner": crud.String().Required().Example("Bob").Description("Widget owner's name"),
@@ -61,5 +61,9 @@ crud.Spec{
 ```
 
 This will add a route `/widgets/:id` that responds to the PATCH method. It generates swagger and serves it at the root of the web application. It validates that the ID in the path is a number, so you don't have to. It also validates that the body is an object and has an "owner" property that is a string, again so you won't have to.
+
+It mounts the swagger-ui at `/` and loads up the generated swagger.json:
+
+![screenshot](/screenshot.png?raw=true "Swagger")
 
 The `PreHandlers` run before validation, and the `Handler` runs after validation is successful.
