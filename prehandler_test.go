@@ -249,6 +249,13 @@ func TestBodyValidation(t *testing.T) {
 	}{
 		{
 			Schema: map[string]Field{
+				"str": String().Required(),
+			},
+			Input:    `{"str":""}`,
+			Expected: 400,
+		},
+		{
+			Schema: map[string]Field{
 				"int": Integer(),
 			},
 			Input:    `{}`,

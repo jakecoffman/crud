@@ -89,6 +89,9 @@ func (f *Field) Validate(value interface{}) error {
 		if f.kind != "string" {
 			return errWrongType
 		}
+		if f.required != nil && *f.required && v == "" {
+			return errRequired
+		}
 	case bool:
 		if f.kind != "boolean" {
 			return errWrongType
