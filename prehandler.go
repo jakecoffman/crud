@@ -55,10 +55,14 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 				if schema.required != nil && *schema.required {
 					return fmt.Errorf("query validation failed for field %v: %v", field, errRequired)
 				}
-			} else if len(queryValue) > 1 {
+				continue
+			}
+			if len(queryValue) > 1 {
 				if schema.kind != KindArray {
 					return fmt.Errorf("query validation failed for field %v: %v", field, errWrongType)
 				}
+			}
+			if schema.kind == KindArray {
 				// sadly we have to convert to a []interface{} to simplify the validate code
 				var intray []interface{}
 				for _, v := range queryValue {

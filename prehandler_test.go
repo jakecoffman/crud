@@ -187,6 +187,20 @@ func TestQueryValidation(t *testing.T) {
 			Input:    "?testquery=z",
 			Expected: 400,
 		},
+		{
+			Schema: map[string]Field{
+				"testquery": Array().Min(2),
+			},
+			Input:    "?testquery=z&testquery=x",
+			Expected: 200,
+		},
+		{
+			Schema: map[string]Field{
+				"testquery": Array(),
+			},
+			Input:    "?testquery=d",
+			Expected: 200,
+		},
 	}
 
 	for i, test := range tests {
