@@ -101,6 +101,12 @@ func (f *Field) Validate(value interface{}) error {
 		if f.kind != "array" {
 			return errWrongType
 		}
+		if f.min != nil && float64(len(v)) < *f.min {
+			return errMinimum
+		}
+		if f.max != nil && float64(len(v)) > *f.max {
+			return errMaximum
+		}
 	default:
 		return fmt.Errorf("unhandled type %v", v)
 	}

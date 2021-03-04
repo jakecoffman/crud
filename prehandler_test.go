@@ -180,9 +180,16 @@ func TestQueryValidation(t *testing.T) {
 			Input:    "?testquery=1&testquery=a",
 			Expected: 400,
 		},
+		{
+			Schema: map[string]Field{
+				"testquery": Array().Min(2),
+			},
+			Input:    "?testquery=z",
+			Expected: 400,
+		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		handler := validationMiddleware(Spec{
 			Validate: Validate{Query: Object(test.Schema)},
 		})
@@ -191,7 +198,7 @@ func TestQueryValidation(t *testing.T) {
 		handler(c)
 
 		if w.Result().StatusCode != test.Expected {
-			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, w.Code, test.Input, test.Schema)
+			t.Errorf("%v: expected '%v' got '%v'. input: '%v'. schema: '%v'", i, test.Expected, w.Code, test.Input, test.Schema)
 		}
 	}
 }
@@ -343,6 +350,12 @@ func TestBodyValidation(t *testing.T) {
 				"arr2": Array().Items(Number()),
 			},
 			Input:    `{"arr2":["a"]}`,
+			Expected: 400,
+		}, {
+			Schema: map[string]Field{
+				"arr3": Array().Min(2),
+			},
+			Input:    `{"arr3":["a"]}`,
 			Expected: 400,
 		}, {
 			Schema: map[string]Field{

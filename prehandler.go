@@ -56,16 +56,26 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 					return fmt.Errorf("query validation failed for field %v: %v", field, errRequired)
 				}
 			} else if len(queryValue) > 1 {
-				if schema.arr == nil {
+				if schema.kind != KindArray {
 					return fmt.Errorf("query validation failed for field %v: %v", field, errWrongType)
 				}
+				// sadly we have to convert to a []interface{} to simplify the validate code
+				var intray []interface{}
 				for _, v := range queryValue {
-					convertedValue, err := convert(v, *schema.arr)
-					if err != nil {
-						return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
-					}
-					if err = schema.arr.Validate(convertedValue); err != nil {
-						return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					intray = append(intray, v)
+				}
+				if err := schema.Validate(intray); err != nil {
+					return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+				}
+				if schema.arr != nil {
+					for _, v := range queryValue {
+						convertedValue, err := convert(v, *schema.arr)
+						if err != nil {
+							return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+						}
+						if err = schema.arr.Validate(convertedValue); err != nil {
+							return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+						}
 					}
 				}
 			} else {
@@ -188,8 +198,6 @@ func convert(inputValue string, schema Field) (interface{}, error) {
 		if err != nil {
 			return nil, errWrongType
 		}
-	case KindArray:
-		// TODO convert each item in the array
 	default:
 		return nil, fmt.Errorf("unknown kind: %v", schema.kind)
 	}
