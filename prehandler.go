@@ -59,7 +59,15 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 				if schema.arr == nil {
 					return fmt.Errorf("query validation failed for field %v: %v", field, errWrongType)
 				}
-				// TODO validate each item in the array
+				for _, v := range queryValue {
+					convertedValue, err := convert(v, *schema.arr)
+					if err != nil {
+						return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					}
+					if err = schema.arr.Validate(convertedValue); err != nil {
+						return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					}
+				}
 			} else {
 				convertedValue, err := convert(queryValue[0], schema)
 				if err != nil {
