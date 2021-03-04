@@ -17,6 +17,7 @@ type Field struct {
 	enum        enum
 	_default    interface{}
 	arr         *Field
+	allow       enum
 }
 
 func (f Field) String() string {
@@ -89,7 +90,7 @@ func (f *Field) Validate(value interface{}) error {
 		if f.kind != "string" {
 			return errWrongType
 		}
-		if f.required != nil && *f.required && v == "" {
+		if f.required != nil && *f.required && v == "" && !f.allow.has("") {
 			return errRequired
 		}
 	case bool:
@@ -194,12 +195,19 @@ func (f Field) Enum(values ...interface{}) Field {
 	return f
 }
 
-// Items specifies the type of elements of an array
+// Items specifies the type of elements in an array
 func (f Field) Items(item Field) Field {
 	if f.kind != KindArray {
 		panic("Items can only be used with array types")
 	}
 	f.arr = &item
+	return f
+}
+
+// Allow lets you break rules
+// For example, String().Required() excludes "", unless you Allow("")
+func (f Field) Allow(values ...interface{}) Field {
+	f.allow = append(f.allow, values...)
 	return f
 }
 
