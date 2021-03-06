@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jakecoffman/crud/option"
 	"regexp"
 	"strings"
 )
@@ -18,11 +19,15 @@ type Router struct {
 
 	// used for automatically incrementing the model name, e.g. Model 1, Model 2.
 	modelCounter int
+
+	// options
+	stripUnknown bool
+	allowUnknown bool
 }
 
 // NewRouter initializes a router.
-func NewRouter(title, version string) *Router {
-	return &Router{
+func NewRouter(title, version string, options ...option.Option) *Router {
+	r := &Router{
 		Swagger: Swagger{
 			Swagger:     "2.0",
 			Info:        Info{Title: title, Version: version},
@@ -31,7 +36,17 @@ func NewRouter(title, version string) *Router {
 		},
 		Mux:          gin.Default(),
 		modelCounter: 1,
+		stripUnknown: true,
+		allowUnknown: true,
 	}
+	for _, o := range options {
+		if o.StripUnknown != nil {
+			r.stripUnknown = *o.StripUnknown
+		} else if o.AllowUnknown != nil {
+			r.allowUnknown = *o.AllowUnknown
+		}
+	}
+	return r
 }
 
 // Add routes to the swagger spec and installs a handler with built-in validation. Some validation of the
@@ -126,7 +141,7 @@ func (r *Router) Add(specs ...Spec) error {
 		}
 
 		// Finally add the route to gin. This is done last because gin will panic on duplicate entries.
-		handlers := []gin.HandlerFunc{validationMiddleware(spec)}
+		handlers := []gin.HandlerFunc{r.validationMiddleware(spec)}
 		handlers = append(handlers, spec.PreHandlers...)
 		handlers = append(handlers, spec.Handler)
 

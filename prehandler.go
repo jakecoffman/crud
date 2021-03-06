@@ -11,7 +11,7 @@ import (
 )
 
 // this is where the validation happens!
-func validationMiddleware(spec Spec) gin.HandlerFunc {
+func (r *Router) validationMiddleware(spec Spec) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val := spec.Validate
 		var query url.Values
@@ -30,22 +30,23 @@ func validationMiddleware(spec Spec) gin.HandlerFunc {
 				c.AbortWithStatusJSON(400, err.Error())
 				return
 			}
-			// TODO strip unknown/unexpected fields option
-			data, _ := json.Marshal(body)
-			c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
+			defer func() {
+				data, _ := json.Marshal(body)
+				c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
+			}()
 		}
 
 		if val.Query.Initialized() {
 			query = c.Request.URL.Query()
 		}
 
-		if err := validate(val, query, body, path); err != nil {
+		if err := r.validate(val, query, body, path); err != nil {
 			c.AbortWithStatusJSON(400, err.Error())
 		}
 	}
 }
 
-func validate(val Validate, query url.Values, body interface{}, path map[string]string) error {
+func (r *Router) validate(val Validate, query url.Values, body interface{}, path map[string]string) error {
 	if val.Query.kind == KindObject { // not sure how any other type makes sense
 		for field, schema := range val.Query.obj {
 			// query values are always strings, so we must try to convert
@@ -95,7 +96,7 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 	}
 
 	if val.Body.Initialized() && val.Body.kind != KindFile {
-		err := validateBody("body", &val.Body, body)
+		err := r.validateBody("body", &val.Body, body)
 		if err != nil {
 			return err
 		}
@@ -118,7 +119,7 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 	return nil
 }
 
-func validateBody(name string, field *Field, body interface{}) error {
+func (r *Router) validateBody(name string, field *Field, body interface{}) error {
 	switch v := body.(type) {
 	case nil:
 		if field.required != nil && *field.required {
@@ -153,14 +154,30 @@ func validateBody(name string, field *Field, body interface{}) error {
 		}
 		if field.arr != nil {
 			for i, item := range v {
-				if err := validateBody(fmt.Sprintf("%v[%v]", name, i), field.arr, item); err != nil {
+				if err := r.validateBody(fmt.Sprintf("%v[%v]", name, i), field.arr, item); err != nil {
 					return err
 				}
 			}
 		}
 	case map[string]interface{}:
+		if !r.allowUnknown {
+			for key := range v {
+				if _, ok := field.obj[key]; !ok {
+					return fmt.Errorf("unknown field in body: %v", key)
+				}
+			}
+		}
+
+		if r.stripUnknown {
+			for key := range v {
+				if _, ok := field.obj[key]; !ok {
+					delete(v, key)
+				}
+			}
+		}
+
 		for name, field := range field.obj {
-			if err := validateBody(name, &field, v[name]); err != nil {
+			if err := r.validateBody(name, &field, v[name]); err != nil {
 				return err
 			}
 		}

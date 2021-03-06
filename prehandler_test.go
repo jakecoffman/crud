@@ -2,6 +2,8 @@ package crud
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jakecoffman/crud/option"
+	"io/ioutil"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -19,6 +21,8 @@ func query(query string) (*httptest.ResponseRecorder, *gin.Context) {
 }
 
 func TestQueryValidation(t *testing.T) {
+	r := NewRouter("", "")
+
 	tests := []struct {
 		Schema   map[string]Field
 		Input    string
@@ -204,7 +208,7 @@ func TestQueryValidation(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		handler := validationMiddleware(Spec{
+		handler := r.validationMiddleware(Spec{
 			Validate: Validate{Query: Object(test.Schema)},
 		})
 
@@ -225,6 +229,8 @@ func body(payload string) (*httptest.ResponseRecorder, *gin.Context) {
 }
 
 func TestSimpleBodyValidation(t *testing.T) {
+	r := NewRouter("", "")
+
 	tests := []struct {
 		Schema   Field
 		Input    string
@@ -263,7 +269,7 @@ func TestSimpleBodyValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		handler := validationMiddleware(Spec{
+		handler := r.validationMiddleware(Spec{
 			Validate: Validate{Body: test.Schema},
 		})
 
@@ -277,6 +283,8 @@ func TestSimpleBodyValidation(t *testing.T) {
 }
 
 func TestBodyValidation(t *testing.T) {
+	r := NewRouter("", "")
+
 	tests := []struct {
 		Schema   map[string]Field
 		Input    string
@@ -395,7 +403,7 @@ func TestBodyValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		handler := validationMiddleware(Spec{
+		handler := r.validationMiddleware(Spec{
 			Validate: Validate{Body: Object(test.Schema)},
 		})
 
@@ -404,6 +412,81 @@ func TestBodyValidation(t *testing.T) {
 
 		if w.Result().StatusCode != test.Expected {
 			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, w.Code, test.Input, test.Schema)
+		}
+	}
+}
+
+func TestBodyStripUnknown(t *testing.T) {
+	r := NewRouter("", "")
+
+	tests := []struct {
+		Schema   map[string]Field
+		Input    string
+		Expected string
+	}{
+		{
+			Schema: map[string]Field{
+				"str": String(),
+			},
+			Input:    `{"str":"ok","unknown1":1}`,
+			Expected: `{"str":"ok"}`,
+		},
+	}
+
+	for _, test := range tests {
+		handler := r.validationMiddleware(Spec{
+			Validate: Validate{Body: Object(test.Schema)},
+		})
+
+		w, c := body(test.Input)
+		handler(c)
+
+		data, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if string(data) != test.Expected {
+			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, string(data), test.Input, test.Schema)
+		}
+		if w.Code != 200 {
+			t.Error(w.Code)
+		}
+	}
+}
+
+func TestBodyErrorUnknown(t *testing.T) {
+	r := NewRouter("", "", option.AllowUnknown(false))
+
+	tests := []struct {
+		Schema   map[string]Field
+		Input    string
+		Expected string
+	}{
+		{
+			Schema: map[string]Field{
+				"str": String(),
+			},
+			Input:    `{"str":"ok","unknown1":1}`,
+			Expected: `{"str":"ok"}`,
+		},
+	}
+
+	for _, test := range tests {
+		handler := r.validationMiddleware(Spec{
+			Validate: Validate{Body: Object(test.Schema)},
+		})
+
+		w, c := body(test.Input)
+		handler(c)
+
+		_, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if w.Code != 400 {
+			t.Error(w.Code)
 		}
 	}
 }
@@ -417,6 +500,8 @@ func path(pathValue string) (*httptest.ResponseRecorder, *gin.Context) {
 }
 
 func TestPathValidation(t *testing.T) {
+	r := NewRouter("", "")
+
 	tests := []struct {
 		Schema   map[string]Field
 		Input    string
@@ -453,7 +538,7 @@ func TestPathValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		handler := validationMiddleware(Spec{
+		handler := r.validationMiddleware(Spec{
 			Validate: Validate{Path: Object(test.Schema)},
 		})
 
