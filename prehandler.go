@@ -38,6 +38,9 @@ func (r *Router) validationMiddleware(spec Spec) gin.HandlerFunc {
 
 		if val.Query.Initialized() {
 			query = c.Request.URL.Query()
+			defer func() {
+				c.Request.URL.RawQuery = query.Encode()
+			}()
 		}
 
 		if err := r.validate(val, query, body, path); err != nil {
@@ -55,6 +58,9 @@ func (r *Router) validate(val Validate, query url.Values, body interface{}, path
 			if len(queryValue) == 0 {
 				if schema.required != nil && *schema.required {
 					return fmt.Errorf("query validation failed for field %v: %v", field, errRequired)
+				}
+				if schema._default != nil {
+					query[field] = []string{schema._default.(string)}
 				}
 				continue
 			}

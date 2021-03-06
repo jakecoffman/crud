@@ -221,6 +221,48 @@ func TestQueryValidation(t *testing.T) {
 	}
 }
 
+func TestQueryDefaults(t *testing.T) {
+	r := NewRouter("", "")
+
+	tests := []struct {
+		Schema   map[string]Field
+		Input    string
+		Expected string
+	}{
+		{
+			Schema: map[string]Field{
+				"q": String().Default("hey"),
+			},
+			Input:    "",
+			Expected: "q=hey",
+		},
+		{
+			Schema: map[string]Field{
+				"q1": String().Default("1"),
+				"q2": String().Default("2"),
+			},
+			Input:    "",
+			Expected: "q1=1&q2=2",
+		},
+	}
+
+	for i, test := range tests {
+		handler := r.validationMiddleware(Spec{
+			Validate: Validate{Query: Object(test.Schema)},
+		})
+
+		w, c := query(test.Input)
+		handler(c)
+
+		if c.Request.URL.RawQuery != test.Expected {
+			t.Errorf("%v: expected '%v' got '%v'. input: '%v'. schema: '%v'", i, test.Expected, c.Request.URL.RawQuery, test.Input, test.Schema)
+		}
+		if w.Result().StatusCode != 200 {
+			t.Error(w.Result().StatusCode)
+		}
+	}
+}
+
 func body(payload string) (*httptest.ResponseRecorder, *gin.Context) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
