@@ -107,10 +107,10 @@ func validate(val Validate, query url.Values, body interface{}, path map[string]
 
 			convertedValue, err := convert(param, schema)
 			if err != nil {
-				return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+				return fmt.Errorf("path validation failed for field %v: %v", field, err.Error())
 			}
 			if err = schema.Validate(convertedValue); err != nil {
-				return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+				return fmt.Errorf("path validation failed for field %v: %v", field, err.Error())
 			}
 		}
 	}
