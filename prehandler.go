@@ -177,7 +177,12 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 		}
 
 		for name, field := range field.obj {
-			if err := r.validateBody(name, &field, v[name]); err != nil {
+			newV := v[name]
+			if newV == nil && field.required != nil && *field.required {
+				return fmt.Errorf("body validation failed for field %v: %v", name, errRequired)
+			} else if newV == nil && field._default != nil {
+				v[name] = field._default
+			} else if err := r.validateBody(name, &field, v[name]); err != nil {
 				return err
 			}
 		}

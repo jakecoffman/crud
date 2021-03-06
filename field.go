@@ -176,8 +176,12 @@ func (f Field) Max(max float64) Field {
 	return f
 }
 
-// Required specifies the field must be provided
+// Required specifies the field must be provided. Can't be used with Default.
 func (f Field) Required() Field {
+	if f._default != nil {
+		panic("required and default cannot be used together")
+	}
+
 	required := true
 	f.required = &required
 	return f
@@ -192,6 +196,36 @@ func (f Field) Example(ex interface{}) Field {
 // Description specifies a human-readable explanation of the field
 func (f Field) Description(description string) Field {
 	f.description = description
+	return f
+}
+
+// Default specifies a default value to use if the field is nil. Can't be used with Required.
+func (f Field) Default(value interface{}) Field {
+	if f.required != nil && *f.required {
+		panic("default and required cannot be used together")
+	}
+
+	switch value.(type) {
+	case int:
+		if f.kind != KindInteger {
+			panic("wrong type passed default")
+		}
+	case float64:
+		if f.kind != KindNumber {
+			panic("wrong type passed default")
+		}
+	case string:
+		if f.kind != KindString {
+			panic("wrong type passed default")
+		}
+	case bool:
+		if f.kind != KindBoolean {
+			panic("wrong type passed default")
+		}
+	default:
+		panic("default must be an int, float64, bool or string")
+	}
+	f._default = value
 	return f
 }
 

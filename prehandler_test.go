@@ -431,6 +431,20 @@ func TestBodyStripUnknown(t *testing.T) {
 			Input:    `{"str":"ok","unknown1":1}`,
 			Expected: `{"str":"ok"}`,
 		},
+		{
+			Schema: map[string]Field{
+				"str2": String().Default("Hello"),
+			},
+			Input:    `{}`,
+			Expected: `{"str2":"Hello"}`,
+		},
+		{
+			Schema: map[string]Field{
+				"int1": Integer().Default(1),
+			},
+			Input:    `{}`,
+			Expected: `{"int1":1}`,
+		},
 	}
 
 	for _, test := range tests {
@@ -449,8 +463,9 @@ func TestBodyStripUnknown(t *testing.T) {
 		if string(data) != test.Expected {
 			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, string(data), test.Input, test.Schema)
 		}
-		if w.Code != 200 {
-			t.Error(w.Code)
+		if w.Result().StatusCode != 200 {
+			data, _ = ioutil.ReadAll(w.Body)
+			t.Error(w.Code, string(data))
 		}
 	}
 }
