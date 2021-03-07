@@ -9,7 +9,7 @@ Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://git
 
 ### Status
 
-This project is not stable yet, API is still changing occasionally and there are MANY missing features.
+This project is not stable yet, API is still changing occasionally and there are missing features.
 
 That being said, it's already pretty useful! If you are not risk averse then use it and pitch in!
 
@@ -45,7 +45,7 @@ Routes are specifications that look like this:
 crud.Spec{
 	Method:      "PATCH",
 	Path:        "/widgets/{id}",
-	PreHandlers: []gin.HandlerFunc{Auth},
+	PreHandlers: Auth,
 	Handler:     CreateHandler,
 	Description: "Adds a widget",
 	Tags:        []string{"Widgets"},
