@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/crud/adapters/echo-adapter"
 	"github.com/labstack/echo/v4"
@@ -83,7 +84,10 @@ var Routes = []crud.Spec{{
 	Method: "PUT",
 	Path:   "/widgets/{id}",
 	Handler: func(c echo.Context) error {
-		var widget interface{}
+		// for some reason I can't bind to interface{} here but I can above
+		var widget struct {
+			json.RawMessage
+		}
 		if err := c.Bind(&widget); err != nil {
 			return err
 		}

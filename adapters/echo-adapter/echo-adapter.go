@@ -93,10 +93,11 @@ func wrap(r *crud.Router, spec *crud.Spec) echo.MiddlewareFunc {
 				}
 
 				if val.Body.Initialized() && val.Body.Kind() != crud.KindFile {
-					if err := c.Bind(&body); err != nil {
+					if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
 						_ = c.JSON(400, err.Error())
-						return fmt.Errorf("failed to bind body")
+						return fmt.Errorf("failed to bind body %w", err)
 					}
+
 					defer func() {
 						data, err := json.Marshal(body)
 						if err != nil {
