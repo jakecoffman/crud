@@ -36,6 +36,11 @@ func (f Field) Initialized() bool {
 	return f.kind != ""
 }
 
+// Kind returns the kind of the field.
+func (f Field) Kind() string {
+	return f.kind
+}
+
 type enum []interface{}
 
 func (e enum) has(needle interface{}) bool {
@@ -53,6 +58,7 @@ var (
 	errMaximum      = fmt.Errorf("maximum exceeded")
 	errMinimum      = fmt.Errorf("minimum exceeded")
 	errEnumNotFound = fmt.Errorf("value not in enum")
+	errUnknown      = fmt.Errorf("unknown value")
 )
 
 // Validate is used in the validation middleware to tell if the value passed

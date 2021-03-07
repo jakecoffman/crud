@@ -2,7 +2,6 @@ package crud
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"strings"
 )
 
@@ -13,9 +12,9 @@ type Spec struct {
 	// Path is the URL path of the routes, w.g. /widgets/{id}
 	Path string
 	// PreHandlers run before validation. Good for authorization
-	PreHandlers []gin.HandlerFunc
+	PreHandlers interface{}
 	// Handler runs after validation. This is where you take over
-	Handler gin.HandlerFunc
+	Handler interface{}
 	// Description is the human-readable text that will appear in the Swagger
 	Description string
 	// Tags are how the Swagger groups paths together, e.g. []string{"Widgets"}
