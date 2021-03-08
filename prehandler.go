@@ -1,55 +1,13 @@
 package crud
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"io/ioutil"
 	"net/url"
 	"strconv"
 )
 
-// this is where the validation happens!
-func (r *Router) validationMiddleware(spec Spec) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		val := spec.Validate
-		var query url.Values
-		var body interface{}
-		var path map[string]string
-
-		if val.Path.Initialized() {
-			path = map[string]string{}
-			for _, param := range c.Params {
-				path[param.Key] = param.Value
-			}
-		}
-
-		if val.Body.Initialized() && val.Body.kind != KindFile {
-			if err := c.BindJSON(&body); err != nil {
-				c.AbortWithStatusJSON(400, err.Error())
-				return
-			}
-			defer func() {
-				data, _ := json.Marshal(body)
-				c.Request.Body = ioutil.NopCloser(bytes.NewReader(data))
-			}()
-		}
-
-		if val.Query.Initialized() {
-			query = c.Request.URL.Query()
-			defer func() {
-				c.Request.URL.RawQuery = query.Encode()
-			}()
-		}
-
-		if err := r.validate(val, query, body, path); err != nil {
-			c.AbortWithStatusJSON(400, err.Error())
-		}
-	}
-}
-
-func (r *Router) validate(val Validate, query url.Values, body interface{}, path map[string]string) error {
+// Validate checks the spec against the inputs and returns an error if it finds one.
+func (r *Router) Validate(val Validate, query url.Values, body interface{}, path map[string]string) error {
 	if val.Query.kind == KindObject { // not sure how any other type makes sense
 		for field, schema := range val.Query.obj {
 			// query values are always strings, so we must try to convert
@@ -57,7 +15,7 @@ func (r *Router) validate(val Validate, query url.Values, body interface{}, path
 
 			if len(queryValue) == 0 {
 				if schema.required != nil && *schema.required {
-					return fmt.Errorf("query validation failed for field %v: %v", field, errRequired)
+					return fmt.Errorf("query validation failed for field %v: %w", field, errRequired)
 				}
 				if schema._default != nil {
 					query[field] = []string{schema._default.(string)}
@@ -66,7 +24,7 @@ func (r *Router) validate(val Validate, query url.Values, body interface{}, path
 			}
 			if len(queryValue) > 1 {
 				if schema.kind != KindArray {
-					return fmt.Errorf("query validation failed for field %v: %v", field, errWrongType)
+					return fmt.Errorf("query validation failed for field %v: %w", field, errWrongType)
 				}
 			}
 			if schema.kind == KindArray {
@@ -76,26 +34,26 @@ func (r *Router) validate(val Validate, query url.Values, body interface{}, path
 					intray = append(intray, v)
 				}
 				if err := schema.Validate(intray); err != nil {
-					return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					return fmt.Errorf("query validation failed for field %v: %w", field, err)
 				}
 				if schema.arr != nil {
 					for _, v := range queryValue {
 						convertedValue, err := convert(v, *schema.arr)
 						if err != nil {
-							return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+							return fmt.Errorf("query validation failed for field %v: %w", field, err)
 						}
 						if err = schema.arr.Validate(convertedValue); err != nil {
-							return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+							return fmt.Errorf("query validation failed for field %v: %w", field, err)
 						}
 					}
 				}
 			} else {
 				convertedValue, err := convert(queryValue[0], schema)
 				if err != nil {
-					return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					return fmt.Errorf("query validation failed for field %v: %w", field, err)
 				}
 				if err = schema.Validate(convertedValue); err != nil {
-					return fmt.Errorf("query validation failed for field %v: %v", field, err.Error())
+					return fmt.Errorf("query validation failed for field %v: %w", field, err)
 				}
 			}
 		}
@@ -114,10 +72,10 @@ func (r *Router) validate(val Validate, query url.Values, body interface{}, path
 
 			convertedValue, err := convert(param, schema)
 			if err != nil {
-				return fmt.Errorf("path validation failed for field %v: %v", field, err.Error())
+				return fmt.Errorf("path validation failed for field %v: %w", field, err)
 			}
 			if err = schema.Validate(convertedValue); err != nil {
-				return fmt.Errorf("path validation failed for field %v: %v", field, err.Error())
+				return fmt.Errorf("path validation failed for field %v: %w", field, err)
 			}
 		}
 	}
@@ -129,34 +87,34 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 	switch v := body.(type) {
 	case nil:
 		if field.required != nil && *field.required {
-			return fmt.Errorf("body validation failed for field %v: %v", name, errRequired)
+			return fmt.Errorf("body validation failed for field %v: %w", name, errRequired)
 		}
 	case string:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+			return fmt.Errorf("body validation failed for field %v: %w", name, err)
 		}
 	case bool:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+			return fmt.Errorf("body validation failed for field %v: %w", name, err)
 		}
 	case float64:
 		if field.kind == KindInteger {
 			// JSON doesn't have integers, so Go treats these fields as float64.
 			// Need to convert to integer before validating it.
 			if v != float64(int64(v)) {
-				return fmt.Errorf("body validation failed for field %v: %v", name, errWrongType)
+				return fmt.Errorf("body validation failed for field %v: %w", name, errWrongType)
 			}
 			if err := field.Validate(int(v)); err != nil {
-				return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+				return fmt.Errorf("body validation failed for field %v: %w", name, err)
 			}
 		} else {
 			if err := field.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+				return fmt.Errorf("body validation failed for field %v: %w", name, err)
 			}
 		}
 	case []interface{}:
 		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %v", name, err.Error())
+			return fmt.Errorf("body validation failed for field %v: %w", name, err)
 		}
 		if field.arr != nil {
 			for i, item := range v {
@@ -169,7 +127,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 		if !r.allowUnknown {
 			for key := range v {
 				if _, ok := field.obj[key]; !ok {
-					return fmt.Errorf("unknown field in body: %v", key)
+					return fmt.Errorf("unknown field in body: %v %w", key, errUnknown)
 				}
 			}
 		}
@@ -185,7 +143,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 		for name, field := range field.obj {
 			newV := v[name]
 			if newV == nil && field.required != nil && *field.required {
-				return fmt.Errorf("body validation failed for field %v: %v", name, errRequired)
+				return fmt.Errorf("body validation failed for field %v: %w", name, errRequired)
 			} else if newV == nil && field._default != nil {
 				v[name] = field._default
 			} else if err := r.validateBody(name, &field, v[name]); err != nil {
@@ -193,7 +151,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 			}
 		}
 	default:
-		return fmt.Errorf("body validation failed: %v", errWrongType)
+		return fmt.Errorf("body validation failed: %w", errWrongType)
 	}
 	return nil
 }

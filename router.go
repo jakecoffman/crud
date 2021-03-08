@@ -3,7 +3,6 @@ package crud
 import (
 	_ "embed"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/crud/option"
 	"regexp"
 	"strings"
@@ -14,8 +13,8 @@ type Router struct {
 	// Swagger is exposed so the user can edit additional optional fields.
 	Swagger Swagger
 
-	// Mux is the underlying router being used. The user can add middlewares and use other features.
-	Mux *gin.Engine
+	// The underlying router being used behind Adapter interface.
+	adapter Adapter
 
 	// used for automatically incrementing the model name, e.g. Model 1, Model 2.
 	modelCounter int
@@ -25,8 +24,13 @@ type Router struct {
 	allowUnknown bool
 }
 
+type Adapter interface {
+	Install(router *Router, spec *Spec) error
+	Serve(swagger *Swagger, addr string) error
+}
+
 // NewRouter initializes a router.
-func NewRouter(title, version string, options ...option.Option) *Router {
+func NewRouter(title, version string, adapter Adapter, options ...option.Option) *Router {
 	r := &Router{
 		Swagger: Swagger{
 			Swagger:     "2.0",
@@ -34,7 +38,7 @@ func NewRouter(title, version string, options ...option.Option) *Router {
 			Paths:       map[string]*Path{},
 			Definitions: map[string]JsonSchema{},
 		},
-		Mux:          gin.Default(),
+		adapter:      adapter,
 		modelCounter: 1,
 		stripUnknown: true,
 		allowUnknown: true,
@@ -140,12 +144,9 @@ func (r *Router) Add(specs ...Spec) error {
 			operation.Parameters = append(operation.Parameters, parameter)
 		}
 
-		// Finally add the route to gin. This is done last because gin will panic on duplicate entries.
-		handlers := []gin.HandlerFunc{r.validationMiddleware(spec)}
-		handlers = append(handlers, spec.PreHandlers...)
-		handlers = append(handlers, spec.Handler)
-
-		r.Mux.Handle(spec.Method, swaggerToGinPattern(spec.Path), handlers...)
+		if err := r.adapter.Install(r, &spec); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -162,35 +163,19 @@ type Validate struct {
 
 // Serve installs the swagger and the swagger-ui and runs the server.
 func (r *Router) Serve(addr string) error {
-	r.Mux.GET("/swagger.json", func(c *gin.Context) {
-		c.JSON(200, r.Swagger)
-	})
-
-	r.Mux.GET("/", func(c *gin.Context) {
-		c.Header("content-type", "text/html")
-		_, err := c.Writer.Write(swaggerUiTemplate)
-		if err != nil {
-			panic(err)
-		}
-	})
-
-	err := r.Mux.Run(addr)
-	return err
+	return r.adapter.Serve(&r.Swagger, addr)
 }
 
-// we need to convert swagger endpoints /widget/{id} to gin endpoints /widget/:id
-var swaggerPathPattern = regexp.MustCompile("\\{([^}]+)\\}")
-
-func swaggerToGinPattern(swaggerUrl string) string {
-	return swaggerPathPattern.ReplaceAllString(swaggerUrl, ":$1")
-}
+// SwaggerPathPattern regex captures swagger path params.
+var SwaggerPathPattern = regexp.MustCompile("\\{([^}]+)\\}")
 
 func pathParms(swaggerUrl string) (params []string) {
-	for _, p := range swaggerPathPattern.FindAllString(swaggerUrl, -1) {
+	for _, p := range SwaggerPathPattern.FindAllString(swaggerUrl, -1) {
 		params = append(params, p[1:len(p)-1])
 	}
 	return
 }
 
+// SwaggerUiTemplate contains the html for swagger UI.
 //go:embed swaggerui.html
-var swaggerUiTemplate []byte
+var SwaggerUiTemplate []byte

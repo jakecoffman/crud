@@ -9,7 +9,7 @@ Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://git
 
 ### Status
 
-This project is not stable yet, API is still changing occationally and there are MANY missing features.
+This project is not stable yet, API is still changing occasionally and there are missing features.
 
 That being said, it's already pretty useful! If you are not risk averse then use it and pitch in!
 
@@ -29,15 +29,15 @@ This reduces boilerplate that you have to write and gives you nice documentation
 
 ### Getting started
 
-Check the example directory for a simple example.
+Check the example directory under the adapters for a simple example.
 
 Start by getting the package `go get github.com/jakecoffman/crud`
 
 Then in your `main.go`:
 
-1. Create a router with `NewRouter`
-2. Add routes with `Add`
-3. Then call `Serve`
+1. Create a router with `NewRouter`, use an adapter from the adapters package or write you own.
+2. Add routes with `Add`.
+3. Then call `Serve`.
 
 Routes are specifications that look like this:
 
@@ -45,7 +45,7 @@ Routes are specifications that look like this:
 crud.Spec{
 	Method:      "PATCH",
 	Path:        "/widgets/{id}",
-	PreHandlers: []gin.HandlerFunc{Auth},
+	PreHandlers: Auth,
 	Handler:     CreateHandler,
 	Description: "Adds a widget",
 	Tags:        []string{"Widgets"},
