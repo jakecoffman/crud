@@ -3,23 +3,25 @@
 [![GoDoc](https://godoc.org/github.com/jakecoffman/crud?status.svg)](https://godoc.org/github.com/jakecoffman/crud)
 [![Go](https://github.com/jakecoffman/crud/actions/workflows/go.yml/badge.svg)](https://github.com/jakecoffman/crud/actions/workflows/go.yml)
 
-A Swagger/OpenAPI builder and validation library for servers.
+A Swagger/OpenAPI builder and validation library for building HTTP/REST APIs.
 
 Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://github.com/glennjones/hapi-swagger) projects.
+
+No additional dependencies besides the router you choose.
 
 ### Status
 
 This project is not stable yet, API is still changing occasionally and there are missing features.
 
-That being said, it's already pretty useful! If you are not risk averse then use it and pitch in!
+That being said, it's already pretty useful! If you are not risk averse then use it and pitch in.
 
 ### Why
 
 Swagger is great, but up until now your options to use swagger are:
 
-- Write it and then make your server match your spec.
-- Write it and generate your server.
-- Generate it from comments in your code.
+1. Write it by hand and then make your server match your spec.
+2. Write it by hand and generate your server.
+3. Generate it from comments in your code.
 
 None of these options seems like a great idea.
 
@@ -35,7 +37,7 @@ Start by getting the package `go get github.com/jakecoffman/crud`
 
 Then in your `main.go`:
 
-1. Create a router with `NewRouter`, use an adapter from the adapters package or write you own.
+1. Create a router with `NewRouter`, use an adapter from the `adapters` sub-package or write you own.
 2. Add routes with `Add`.
 3. Then call `Serve`.
 
@@ -55,6 +57,7 @@ crud.Spec{
         }),
 		Body: crud.Object(map[string]crud.Field{
 			"owner": crud.String().Required().Example("Bob").Description("Widget owner's name"),
+			"quantity": crud.Integer().Min(1).Default(1).Description("The amount requested")
 		}),
 	},
 }

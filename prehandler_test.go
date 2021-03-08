@@ -3,15 +3,10 @@ package crud
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/crud/option"
 	"net/url"
 	"testing"
 )
-
-func init() {
-	gin.SetMode(gin.ReleaseMode)
-}
 
 type TestAdapter struct{}
 
