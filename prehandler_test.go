@@ -450,7 +450,7 @@ func TestBodyValidation(t *testing.T) {
 }
 
 func TestBodyStripUnknown(t *testing.T) {
-	r := NewRouter("", "", &TestAdapter{})
+	r := NewRouter("", "", &TestAdapter{}, option.StripUnknown(true))
 
 	tests := []struct {
 		Schema   map[string]Field
@@ -584,5 +584,59 @@ func TestPathValidation(t *testing.T) {
 		if errors.Unwrap(err) != test.Expected {
 			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, err, test.Input, test.Schema)
 		}
+	}
+}
+
+func TestStrip(t *testing.T) {
+	r := NewRouter("", "", &TestAdapter{}, option.StripUnknown(true))
+	var input interface{}
+	input = map[string]interface{}{
+		"id": "blah",
+	}
+
+	err := r.Validate(Validate{Body: Object(map[string]Field{})}, nil, input, nil)
+
+	result := input.(map[string]interface{})
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+	if _, ok := result["id"]; ok {
+		t.Errorf("expected the value to be stripped %v", result["id"])
+	}
+
+	input = map[string]interface{}{
+		"id": "blah",
+	}
+
+	err = r.Validate(Validate{Body: Object(map[string]Field{}).Strip(false)}, nil, input, nil)
+	result = input.(map[string]interface{})
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+	if _, ok := result["id"]; !ok {
+		t.Errorf("expected the value not to be stripped")
+	}
+}
+
+func TestUnknown(t *testing.T) {
+	r := NewRouter("", "", &TestAdapter{}, option.AllowUnknown(true))
+	var input interface{}
+	input = map[string]interface{}{
+		"id": "blah",
+	}
+
+	err := r.Validate(Validate{Body: Object(map[string]Field{})}, nil, input, nil)
+
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+
+	input = map[string]interface{}{
+		"id": "blah",
+	}
+
+	err = r.Validate(Validate{Body: Object(map[string]Field{}).Unknown(false)}, nil, input, nil)
+	if err == nil {
+		t.Errorf("Expected error")
 	}
 }

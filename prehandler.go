@@ -3,6 +3,7 @@ package crud
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strconv"
 )
 
@@ -124,7 +125,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 			}
 		}
 	case map[string]interface{}:
-		if !r.allowUnknown {
+		if (field.unknown != nil && !*field.unknown) || (field.unknown == nil && !r.allowUnknown) {
 			for key := range v {
 				if _, ok := field.obj[key]; !ok {
 					return fmt.Errorf("unknown field in body: %v %w", key, errUnknown)
@@ -132,7 +133,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 			}
 		}
 
-		if r.stripUnknown {
+		if (field.strip != nil && *field.strip) || (field.strip == nil && r.stripUnknown) {
 			for key := range v {
 				if _, ok := field.obj[key]; !ok {
 					delete(v, key)
@@ -151,7 +152,7 @@ func (r *Router) validateBody(name string, field *Field, body interface{}) error
 			}
 		}
 	default:
-		return fmt.Errorf("body validation failed: %w", errWrongType)
+		return fmt.Errorf("body validation failed for type %v: %w", reflect.TypeOf(v), errWrongType)
 	}
 	return nil
 }

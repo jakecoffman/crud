@@ -18,6 +18,8 @@ type Field struct {
 	_default    interface{}
 	arr         *Field
 	allow       enum
+	strip       *bool
+	unknown     *bool
 }
 
 func (f Field) String() string {
@@ -254,6 +256,18 @@ func (f Field) Items(item Field) Field {
 // For example, String().Required() excludes "", unless you Allow("")
 func (f Field) Allow(values ...interface{}) Field {
 	f.allow = append(f.allow, values...)
+	return f
+}
+
+// Strip overrides the global "strip unknown" setting just for this field
+func (f Field) Strip(strip bool) Field {
+	f.strip = &strip
+	return f
+}
+
+// Unknown overrides the global "allow unknown" setting just for this field
+func (f Field) Unknown(allow bool) Field {
+	f.unknown = &allow
 	return f
 }
 
