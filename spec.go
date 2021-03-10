@@ -15,11 +15,11 @@ type Spec struct {
 	PreHandlers interface{}
 	// Handler runs after validation. This is where you take over
 	Handler interface{}
-	// Description is the human-readable text that will appear in the Swagger
+	// Description is the longer text that will appear in the Swagger under the endpoint
 	Description string
 	// Tags are how the Swagger groups paths together, e.g. []string{"Widgets"}
 	Tags []string
-	// Summary is a longer description of what an endpoint does in the Swagger
+	// Summary is a short description of what an endpoint does in the Swagger
 	Summary string
 	// Validate is used to automatically validate the various inputs to the endpoint
 	Validate Validate
