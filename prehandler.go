@@ -19,7 +19,7 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 					return fmt.Errorf("query validation failed for field %v: %w", field, errRequired)
 				}
 				if schema._default != nil {
-					query[field] = []string{schema._default.(string)}
+					query[field] = []string{fmt.Sprint(schema._default)}
 				}
 				continue
 			}
