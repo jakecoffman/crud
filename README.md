@@ -70,3 +70,8 @@ It mounts the swagger-ui at `/` and loads up the generated swagger.json:
 ![screenshot](/screenshot.png?raw=true "Swagger")
 
 The `PreHandlers` run before validation, and the `Handler` runs after validation is successful.
+
+## Examples
+
+- [Full Gin-Gonic Example](adapters/gin-adapter/example)
+- [Full Echo Example](adapters/echo-adapter/example)
