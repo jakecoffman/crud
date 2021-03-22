@@ -29,6 +29,11 @@ This project takes another approach: make a specification in Go code using nice 
 
 This reduces boilerplate that you have to write and gives you nice documentation too!
 
+### Examples
+
+- [Full Gin-Gonic Example](adapters/gin-adapter/example)
+- [Full Echo Example](adapters/echo-adapter/example)
+
 ### Getting started
 
 Check the example directory under the adapters for a simple example.
@@ -70,8 +75,3 @@ It mounts the swagger-ui at `/` and loads up the generated swagger.json:
 ![screenshot](/screenshot.png?raw=true "Swagger")
 
 The `PreHandlers` run before validation, and the `Handler` runs after validation is successful.
-
-## Examples
-
-- [Full Gin-Gonic Example](adapters/gin-adapter/example)
-- [Full Echo Example](adapters/echo-adapter/example)
