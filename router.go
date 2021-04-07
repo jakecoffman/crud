@@ -147,7 +147,7 @@ func (r *Router) Add(specs ...Spec) error {
 			r.Swagger.Components.Schemas[modelName] = spec.Validate.Body.ToJsonSchema()
 			r.modelCounter++
 			operation.RequestBody = &RequestBody{Content: map[string]MediaType{
-				"*/*": {Schema: &Ref{fmt.Sprint("#/components/schemas/", modelName)}},
+				"application/json": {Schema: &Ref{fmt.Sprint("#/components/schemas/", modelName)}},
 			}}
 		}
 
@@ -158,8 +158,7 @@ func (r *Router) Add(specs ...Spec) error {
 	return nil
 }
 
-// Validate are optional fields that will be used during validation. Leave unneeded
-// properties nil and they will be ignored.
+// Validate holds fields that will be used during validation. Leave unneeded properties blank and they will be ignored.
 type Validate struct {
 	Query    Field
 	Body     Field
@@ -174,7 +173,7 @@ func (r *Router) Serve(addr string) error {
 }
 
 // SwaggerPathPattern regex captures swagger path params.
-var SwaggerPathPattern = regexp.MustCompile("\\{([^}]+)\\}")
+var SwaggerPathPattern = regexp.MustCompile(`{([^}]+)}`)
 
 func pathParms(swaggerUrl string) (params []string) {
 	for _, p := range SwaggerPathPattern.FindAllString(swaggerUrl, -1) {
