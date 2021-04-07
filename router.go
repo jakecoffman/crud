@@ -33,10 +33,20 @@ type Adapter interface {
 func NewRouter(title, version string, adapter Adapter, options ...option.Option) *Router {
 	r := &Router{
 		Swagger: Swagger{
-			Swagger:     "2.0",
-			Info:        Info{Title: title, Version: version},
-			Paths:       map[string]*Path{},
-			Definitions: map[string]JsonSchema{},
+			OpenAPI: "3.0.3",
+			Info:    Info{Title: title, Version: version},
+			Paths:   map[string]*Path{},
+			Components: Components{
+				Schemas:         map[string]*JsonSchema{},
+				Responses:       map[string]*JsonSchema{},
+				Parameters:      map[string]*JsonSchema{},
+				Examples:        map[string]*JsonSchema{},
+				RequestBodies:   map[string]*JsonSchema{},
+				Headers:         map[string]*JsonSchema{},
+				SecuritySchemas: map[string]*JsonSchema{},
+				Links:           map[string]*JsonSchema{},
+				Callbacks:       map[string]*JsonSchema{},
+			},
 		},
 		adapter:      adapter,
 		modelCounter: 1,
@@ -134,14 +144,11 @@ func (r *Router) Add(specs ...Spec) error {
 		}
 		if spec.Validate.Body.Initialized() {
 			modelName := fmt.Sprintf("Model %v", r.modelCounter)
-			parameter := Parameter{
-				In:     "body",
-				Name:   "body",
-				Schema: &Ref{fmt.Sprint("#/definitions/", modelName)},
-			}
-			r.Swagger.Definitions[modelName] = spec.Validate.Body.ToJsonSchema()
+			r.Swagger.Components.Schemas[modelName] = spec.Validate.Body.ToJsonSchema()
 			r.modelCounter++
-			operation.Parameters = append(operation.Parameters, parameter)
+			operation.RequestBody = &RequestBody{Content: map[string]MediaType{
+				"*/*": {Schema: &Ref{fmt.Sprint("#/components/schemas/", modelName)}},
+			}}
 		}
 
 		if err := r.adapter.Install(r, &spec); err != nil {
