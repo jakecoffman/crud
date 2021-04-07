@@ -42,7 +42,7 @@ var Routes = []crud.Spec{{
 	Path:   "/widgets",
 	Handler: func(c *gin.Context) {
 		var widget interface{}
-		if err := c.BindJSON(&widget); err != nil {
+		if err := c.Bind(&widget); err != nil {
 			return
 		}
 		c.JSON(200, widget)
@@ -84,7 +84,7 @@ var Routes = []crud.Spec{{
 	Path:   "/widgets/{id}",
 	Handler: func(c *gin.Context) {
 		var widget interface{}
-		if err := c.BindJSON(&widget); err != nil {
+		if err := c.Bind(&widget); err != nil {
 			return
 		}
 		c.JSON(200, widget)

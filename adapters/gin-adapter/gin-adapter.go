@@ -88,7 +88,7 @@ func wrap(r *crud.Router, spec *crud.Spec) gin.HandlerFunc {
 		}
 
 		if val.Body.Initialized() && val.Body.Kind() != crud.KindFile {
-			if err := c.BindJSON(&body); err != nil {
+			if err := c.Bind(&body); err != nil {
 				c.AbortWithStatusJSON(400, err.Error())
 				return
 			}
