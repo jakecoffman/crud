@@ -275,16 +275,19 @@ func (f Field) Unknown(allow bool) Field {
 func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 	switch f.kind {
 	case KindArray:
-		items := f.arr.ToJsonSchema()
-		parameters = append(parameters, Parameter{
+		p := Parameter{
 			In:               in,
 			Type:             f.kind,
-			Items:            &items,
 			CollectionFormat: "multi",
 			Required:         f.required,
 			Description:      f.description,
 			Default:          f._default,
-		})
+		}
+		if f.arr != nil {
+			items := f.arr.ToJsonSchema()
+			p.Items = &items
+		}
+		parameters = append(parameters, p)
 	case KindObject:
 		for name, field := range f.obj {
 			param := Parameter{
@@ -299,8 +302,10 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 				Maximum:     field.max,
 			}
 			if field.kind == KindArray {
-				temp := field.arr.ToJsonSchema()
-				param.Items = &temp
+				if field.arr != nil {
+					temp := field.arr.ToJsonSchema()
+					param.Items = &temp
+				}
 				param.CollectionFormat = "multi"
 			}
 			if field.kind == KindObject {
@@ -320,8 +325,10 @@ func (f *Field) ToJsonSchema() JsonSchema {
 
 	switch f.kind {
 	case KindArray:
-		items := f.arr.ToJsonSchema()
-		schema.Items = &items
+		if f.arr != nil {
+			items := f.arr.ToJsonSchema()
+			schema.Items = &items
+		}
 	case KindObject:
 		schema.Properties = map[string]JsonSchema{}
 		for name, field := range f.obj {
@@ -341,8 +348,10 @@ func (f *Field) ToJsonSchema() JsonSchema {
 				prop.Maximum = *field.max
 			}
 			if prop.Type == KindArray {
-				items := field.arr.ToJsonSchema()
-				prop.Items = &items
+				if field.arr != nil {
+					items := field.arr.ToJsonSchema()
+					prop.Items = &items
+				}
 			}
 			schema.Properties[name] = prop
 		}

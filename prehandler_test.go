@@ -170,6 +170,13 @@ func TestQueryValidation(t *testing.T) {
 		},
 		{
 			Schema: map[string]Field{
+				"testarray": Array(),
+			},
+			Input:    "testarray=1&testarray=a",
+			Expected: nil,
+		},
+		{
+			Schema: map[string]Field{
 				"testquery": Array().Items(Number()),
 			},
 			Input:    "testquery=1&testquery=2",
@@ -394,6 +401,12 @@ func TestBodyValidation(t *testing.T) {
 			},
 			Input:    `{"obj2":{"inner":"not a number"}}`,
 			Expected: errWrongType,
+		}, {
+			Schema: map[string]Field{
+				"arr1": Array(),
+			},
+			Input:    `{"arr1":[1,"a"]}`,
+			Expected: nil,
 		}, {
 			Schema: map[string]Field{
 				"arr1": Array().Items(Number()),
