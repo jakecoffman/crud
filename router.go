@@ -133,7 +133,7 @@ func (r *Router) Add(specs ...Spec) error {
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Body.Initialized() {
-			modelName := fmt.Sprintf("Model %v", r.modelCounter)
+			modelName := fmt.Sprintf("Model-%v", r.modelCounter)
 			parameter := Parameter{
 				In:     "body",
 				Name:   "body",
