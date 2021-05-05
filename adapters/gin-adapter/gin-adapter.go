@@ -17,7 +17,7 @@ type Adapter struct {
 
 func New() *Adapter {
 	return &Adapter{
-		Engine: gin.Default(),
+		Engine: gin.New(),
 	}
 }
 
