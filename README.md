@@ -11,9 +11,7 @@ No additional dependencies besides the router you choose.
 
 ### Status
 
-This project is not stable yet, API is still changing occasionally and there are missing features.
-
-That being said, it's already pretty useful! If you are not risk averse then use it and pitch in.
+Version 1.0 is stable, version 2 will support OpenAPI v3.
 
 ### Why
 
