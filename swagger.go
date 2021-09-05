@@ -1,8 +1,9 @@
 package crud
 
 type Swagger struct {
-	Swagger string `json:"swagger"`
-	Info    Info   `json:"info"`
+	Swagger  string `json:"swagger"`
+	Info     Info   `json:"info"`
+	BasePath string `json:"basePath,omitempty"`
 
 	Paths       map[string]*Path      `json:"paths"`
 	Definitions map[string]JsonSchema `json:"definitions"`
