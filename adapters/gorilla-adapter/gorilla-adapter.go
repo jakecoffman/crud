@@ -36,13 +36,15 @@ func (a *Adapter) Install(r *crud.Router, spec *crud.Spec) error {
 		return fmt.Errorf("PreHandlers must be mux.MiddlewareFunc, got: %v", reflect.TypeOf(spec.Handler))
 	}
 
-	var finalHandler handler
+	var finalHandler http.Handler
 	switch v := spec.Handler.(type) {
 	case nil:
 		return fmt.Errorf("handler must not be nil")
 	case http.HandlerFunc:
-		finalHandler = handler(v)
+		finalHandler = v
 	case func(http.ResponseWriter, *http.Request):
+		finalHandler = http.HandlerFunc(v)
+	case http.Handler:
 		finalHandler = v
 	default:
 		return fmt.Errorf("handler must be http.HandlerFunc, got %v", reflect.TypeOf(spec.Handler))
@@ -72,15 +74,9 @@ func (a *Adapter) Serve(swagger *crud.Swagger, addr string) error {
 	return http.ListenAndServe(addr, a.Engine)
 }
 
-type handler func(http.ResponseWriter, *http.Request)
-
-func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h(w, r)
-}
-
 func validateHandlerMiddleware(router *crud.Router, spec *crud.Spec) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
-		return handler(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			val := spec.Validate
 			var query url.Values
 			var body interface{}
