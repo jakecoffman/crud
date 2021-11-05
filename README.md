@@ -31,6 +31,7 @@ This reduces boilerplate that you have to write and gives you nice documentation
 
 - [Full Gin-Gonic Example](adapters/gin-adapter/example)
 - [Full Echo Example](adapters/echo-adapter/example)
+- [Full Gorilla Mux Example](adapters/gorilla-adapter/example)
 
 ### Getting started
 
