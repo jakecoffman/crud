@@ -33,6 +33,10 @@ This reduces boilerplate that you have to write and gives you nice documentation
 - [Full Echo Example](adapters/echo-adapter/example)
 - [Full Gorilla Mux Example](adapters/gorilla-adapter/example)
 
+### Builtin ServeMux not supported
+
+This is disappointing, but the builtin http.ServeMux is not supported because it doesn't support routing by method, and doesn't support path params. This project is NOT a router so it will not try to reinvent these features.
+
 ### Getting started
 
 Check the example directory under the adapters for a simple example.
