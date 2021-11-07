@@ -6,6 +6,7 @@ import (
 	"github.com/jakecoffman/crud/adapters/echo-adapter"
 	"github.com/labstack/echo/v4"
 	"log"
+	"math/rand"
 )
 
 func main() {
@@ -41,10 +42,18 @@ var Routes = []crud.Spec{{
 }, {
 	Method: "POST",
 	Path:   "/widgets",
+	PreHandlers: func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if rand.Intn(2) == 0 {
+				return echo.NewHTTPError(418, "Random rejection from PreHandler")
+			}
+			return next(c)
+		}
+	},
 	Handler: func(c echo.Context) error {
 		var widget interface{}
 		if err := c.Bind(&widget); err != nil {
-			return err
+			return echo.NewHTTPError(400, err.Error())
 		}
 		return c.JSON(200, widget)
 	},
@@ -89,7 +98,7 @@ var Routes = []crud.Spec{{
 			json.RawMessage
 		}
 		if err := c.Bind(&widget); err != nil {
-			return err
+			return echo.NewHTTPError(400, err.Error())
 		}
 		return c.JSON(200, widget)
 	},
