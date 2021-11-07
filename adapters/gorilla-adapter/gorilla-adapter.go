@@ -27,11 +27,14 @@ func (a *Adapter) Install(r *crud.Router, spec *crud.Spec) error {
 		validateHandlerMiddleware(r, spec),
 	}
 
-	switch spec.PreHandlers.(type) {
+	switch v := spec.PreHandlers.(type) {
 	case nil:
 	case []mux.MiddlewareFunc:
+		handlers = append(handlers, v...)
 	case mux.MiddlewareFunc:
-	case func(http.HandlerFunc) http.HandlerFunc:
+		handlers = append(handlers, v)
+	case func(http.Handler) http.Handler:
+		handlers = append(handlers, v)
 	default:
 		return fmt.Errorf("PreHandlers must be mux.MiddlewareFunc, got: %v", reflect.TypeOf(spec.Handler))
 	}
@@ -52,7 +55,7 @@ func (a *Adapter) Install(r *crud.Router, spec *crud.Spec) error {
 
 	// without Subrouter, Use would affect all other routes too
 	subRouter := a.Engine.Path(spec.Path).Methods(spec.Method).Subrouter()
-	subRouter.Use(handlers[:len(handlers)-1]...)
+	subRouter.Use(handlers...)
 	subRouter.Handle("", finalHandler)
 
 	return nil
@@ -89,30 +92,39 @@ func validateHandlerMiddleware(router *crud.Router, spec *crud.Spec) mux.Middlew
 				}
 			}
 
+			var rewriteBody bool
 			if val.Body.Initialized() && val.Body.Kind() != crud.KindFile {
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 					w.WriteHeader(400)
-					_ = json.NewEncoder(w).Encode(err.Error())
+					_ = json.NewEncoder(w).Encode("failure decoding body: " + err.Error())
 					return
 				}
-				defer func() {
-					data, _ := json.Marshal(body)
-					_ = r.Body.Close()
-					r.Body = ioutil.NopCloser(bytes.NewReader(data))
-				}()
+				rewriteBody = true
 			}
 
+			var rewriteQuery bool
 			if val.Query.Initialized() {
 				query = r.URL.Query()
-				defer func() {
-					r.URL.RawQuery = query.Encode()
-				}()
+				rewriteQuery = true
 			}
 
 			if err := router.Validate(val, query, body, path); err != nil {
 				w.WriteHeader(400)
 				_ = json.NewEncoder(w).Encode(err.Error())
 				return
+			}
+
+			// Validate can strip values that are not valid, so we rewrite them
+			// after validation is complete. Can't use defer as in other adapters
+			// because next.ServeHTTP calls the next handler and defer hasn't
+			// run yet.
+			if rewriteBody {
+				data, _ := json.Marshal(body)
+				_ = r.Body.Close()
+				r.Body = ioutil.NopCloser(bytes.NewReader(data))
+			}
+			if rewriteQuery {
+				r.URL.RawQuery = query.Encode()
 			}
 
 			next.ServeHTTP(w, r)

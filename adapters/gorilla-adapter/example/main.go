@@ -6,6 +6,7 @@ import (
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/crud/adapters/gorilla-adapter"
 	"log"
+	"math/rand"
 	"net/http"
 )
 
@@ -42,11 +43,21 @@ var Routes = []crud.Spec{{
 }, {
 	Method: "POST",
 	Path:   "/widgets",
+	PreHandlers: func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rand.Intn(2) == 0 {
+				w.WriteHeader(http.StatusTeapot)
+				_, _ = w.Write([]byte("Random rejection from PreHandler"))
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	},
 	Handler: func(w http.ResponseWriter, r *http.Request) {
 		var widget interface{}
 		if err := json.NewDecoder(r.Body).Decode(&widget); err != nil {
 			w.WriteHeader(400)
-			_ = json.NewEncoder(w).Encode(err.Error())
+			_ = json.NewEncoder(w).Encode("Failed reading body: " + err.Error())
 			return
 		}
 		_ = json.NewEncoder(w).Encode(widget)
