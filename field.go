@@ -101,6 +101,12 @@ func (f *Field) Validate(value interface{}) error {
 		if f.required != nil && *f.required && v == "" && !f.allow.has("") {
 			return errRequired
 		}
+		if f.max != nil && len(v) > int(*f.max) {
+			return errMaximum
+		}
+		if f.min != nil && len(v) < int(*f.min) {
+			return errMinimum
+		}
 	case bool:
 		if f.kind != "boolean" {
 			return errWrongType
