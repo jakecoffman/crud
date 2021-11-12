@@ -332,48 +332,6 @@ func TestBodyValidation(t *testing.T) {
 	}{
 		{
 			Schema: map[string]Field{
-				"str": String().Required(),
-			},
-			Input:    `{"str":""}`,
-			Expected: errRequired,
-		},
-		{
-			Schema: map[string]Field{
-				"str": String().Required().Allow(""),
-			},
-			Input:    `{"str":""}`,
-			Expected: nil,
-		},
-		{
-			Schema: map[string]Field{
-				"str": String().Min(7),
-			},
-			Input:    `{"str":""}`,
-			Expected: errMinimum,
-		},
-		{
-			Schema: map[string]Field{
-				"str": String().Min(7),
-			},
-			Input:    `{"str":"123456"}`,
-			Expected: errMinimum,
-		},
-		{
-			Schema: map[string]Field{
-				"str": String().Max(3),
-			},
-			Input:    `{"str":"123"}`,
-			Expected: nil,
-		},
-		{
-			Schema: map[string]Field{
-				"str": String().Max(3),
-			},
-			Input:    `{"str":"1234"}`,
-			Expected: errMaximum,
-		},
-		{
-			Schema: map[string]Field{
 				"int": Integer(),
 			},
 			Input:    `{}`,

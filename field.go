@@ -75,7 +75,7 @@ func (f *Field) Validate(value interface{}) error {
 
 	switch v := value.(type) {
 	case int:
-		if f.kind != "integer" {
+		if f.kind != KindInteger {
 			return errWrongType
 		}
 		if f.max != nil && float64(v) > *f.max {
@@ -85,7 +85,7 @@ func (f *Field) Validate(value interface{}) error {
 			return errMinimum
 		}
 	case float64:
-		if f.kind != "number" {
+		if f.kind != KindNumber {
 			return errWrongType
 		}
 		if f.max != nil && v > *f.max {
@@ -95,7 +95,7 @@ func (f *Field) Validate(value interface{}) error {
 			return errMinimum
 		}
 	case string:
-		if f.kind != "string" {
+		if f.kind != KindString {
 			return errWrongType
 		}
 		if f.required != nil && *f.required && v == "" && !f.allow.has("") {
@@ -108,11 +108,11 @@ func (f *Field) Validate(value interface{}) error {
 			return errMinimum
 		}
 	case bool:
-		if f.kind != "boolean" {
+		if f.kind != KindBoolean {
 			return errWrongType
 		}
 	case []interface{}:
-		if f.kind != "array" {
+		if f.kind != KindArray {
 			return errWrongType
 		}
 		if f.min != nil && float64(len(v)) < *f.min {
@@ -181,12 +181,18 @@ func Integer() Field {
 // Min specifies a minimum value for this field
 func (f Field) Min(min float64) Field {
 	f.min = &min
+	if f.max != nil && *f.max < min {
+		panic("min cannot be larger than max")
+	}
 	return f
 }
 
 // Max specifies a maximum value for this field
 func (f Field) Max(max float64) Field {
 	f.max = &max
+	if f.min != nil && *f.min > max {
+		panic("min cannot be larger than max")
+	}
 	return f
 }
 
