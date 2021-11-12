@@ -251,6 +251,9 @@ func (f Field) Default(value interface{}) Field {
 
 // Enum restricts the field's values to the set of values specified
 func (f Field) Enum(values ...interface{}) Field {
+	if f.kind == KindArray || f.kind == KindObject || f.kind == KindFile {
+		panic("Enum cannot be used on arrays, objects, files")
+	}
 	f.enum = values
 	return f
 }
