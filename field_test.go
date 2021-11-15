@@ -1,6 +1,9 @@
 package crud
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestField_Max_Panic(t *testing.T) {
 	defer func() {
@@ -332,6 +335,66 @@ func TestField_Array(t *testing.T) {
 
 	for i, test := range table {
 		if v := test.Field.Validate(test.Input); v != test.Expected {
+			t.Errorf("%v: For input '%v', expected '%v' got '%v'", i, test.Input, test.Expected, v)
+		}
+	}
+}
+
+func TestField_Object(t *testing.T) {
+	table := []struct {
+		Field    Field
+		Input    interface{}
+		Expected error
+	}{
+		{
+			Field:    Object(map[string]Field{}),
+			Input:    "",
+			Expected: errWrongType,
+		},
+		{
+			Field:    Object(map[string]Field{}),
+			Input:    nil,
+			Expected: nil,
+		},
+		{
+			Field:    Object(map[string]Field{}).Required(),
+			Input:    nil,
+			Expected: errRequired,
+		},
+		{
+			Field:    Object(map[string]Field{}).Required(),
+			Input:    map[string]interface{}{},
+			Expected: nil,
+		},
+		{
+			Field: Object(map[string]Field{
+				"nested": Integer().Required().Min(1),
+			}),
+			Input:    map[string]interface{}{},
+			Expected: errRequired,
+		},
+		{
+			Field: Object(map[string]Field{
+				"nested": Integer().Required().Min(1),
+			}),
+			Input: map[string]interface{}{
+				"nested": 1.1,
+			},
+			Expected: errWrongType,
+		},
+		{
+			Field: Object(map[string]Field{
+				"nested": Integer().Required().Min(1),
+			}),
+			Input: map[string]interface{}{
+				"nested": 1.,
+			},
+			Expected: nil,
+		},
+	}
+
+	for i, test := range table {
+		if v := test.Field.Validate(test.Input); !errors.Is(v, test.Expected) {
 			t.Errorf("%v: For input '%v', expected '%v' got '%v'", i, test.Input, test.Expected, v)
 		}
 	}

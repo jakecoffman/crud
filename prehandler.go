@@ -3,7 +3,6 @@ package crud
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"strconv"
 )
 
@@ -29,7 +28,7 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 				}
 			}
 			if schema.kind == KindArray {
-				// sadly we have to convert to a []interface{} to simplify the validate code
+				// sadly we have to convert to a []interface{} to simplify the validation code
 				var intray []interface{}
 				for _, v := range queryValue {
 					intray = append(intray, v)
@@ -61,8 +60,15 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 	}
 
 	if val.Body.Initialized() && val.Body.kind != KindFile {
-		err := r.validateBody("body", &val.Body, body)
-		if err != nil {
+		// use router defaults if the object doesn't have anything set
+		f := val.Body
+		if f.strip == nil {
+			f = f.Strip(r.stripUnknown)
+		}
+		if f.unknown == nil {
+			f = f.Unknown(r.allowUnknown)
+		}
+		if err := f.Validate(body); err != nil {
 			return err
 		}
 	}
@@ -84,79 +90,8 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 	return nil
 }
 
-func (r *Router) validateBody(name string, field *Field, body interface{}) error {
-	switch v := body.(type) {
-	case nil:
-		if field.required != nil && *field.required {
-			return fmt.Errorf("body validation failed for field %v: %w", name, errRequired)
-		}
-	case string:
-		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %w", name, err)
-		}
-	case bool:
-		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %w", name, err)
-		}
-	case float64:
-		if field.kind == KindInteger {
-			// JSON doesn't have integers, so Go treats these fields as float64.
-			// Need to convert to integer before validating it.
-			if v != float64(int64(v)) {
-				return fmt.Errorf("body validation failed for field %v: %w", name, errWrongType)
-			}
-			if err := field.Validate(int(v)); err != nil {
-				return fmt.Errorf("body validation failed for field %v: %w", name, err)
-			}
-		} else {
-			if err := field.Validate(v); err != nil {
-				return fmt.Errorf("body validation failed for field %v: %w", name, err)
-			}
-		}
-	case []interface{}:
-		if err := field.Validate(v); err != nil {
-			return fmt.Errorf("body validation failed for field %v: %w", name, err)
-		}
-		if field.arr != nil {
-			for i, item := range v {
-				if err := r.validateBody(fmt.Sprintf("%v[%v]", name, i), field.arr, item); err != nil {
-					return err
-				}
-			}
-		}
-	case map[string]interface{}:
-		if (field.unknown != nil && !*field.unknown) || (field.unknown == nil && !r.allowUnknown) {
-			for key := range v {
-				if _, ok := field.obj[key]; !ok {
-					return fmt.Errorf("unknown field in body: %v %w", key, errUnknown)
-				}
-			}
-		}
-
-		if (field.strip != nil && *field.strip) || (field.strip == nil && r.stripUnknown) {
-			for key := range v {
-				if _, ok := field.obj[key]; !ok {
-					delete(v, key)
-				}
-			}
-		}
-
-		for name, field := range field.obj {
-			newV := v[name]
-			if newV == nil && field.required != nil && *field.required {
-				return fmt.Errorf("body validation failed for field %v: %w", name, errRequired)
-			} else if newV == nil && field._default != nil {
-				v[name] = field._default
-			} else if err := r.validateBody(name, &field, v[name]); err != nil {
-				return err
-			}
-		}
-	default:
-		return fmt.Errorf("body validation failed for type %v: %w", reflect.TypeOf(v), errWrongType)
-	}
-	return nil
-}
-
+// For certain types of data passed like Query and Header, the value is always
+// a string. So this function attempts to convert the string into the desired field kind.
 func convert(inputValue string, schema Field) (interface{}, error) {
 	// don't try to convert if the field is empty
 	if inputValue == "" {

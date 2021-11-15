@@ -316,7 +316,7 @@ func TestSimpleBodyValidation(t *testing.T) {
 	for _, test := range tests {
 		err := r.Validate(Validate{Body: test.Schema}, nil, test.Input, nil)
 
-		if errors.Unwrap(err) != test.Expected {
+		if !errors.Is(err, test.Expected) {
 			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, err, test.Input, test.Schema)
 		}
 	}
@@ -520,7 +520,7 @@ func TestBodyErrorUnknown(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		var input interface{}
 		if err := json.Unmarshal([]byte(test.Input), &input); err != nil {
 			t.Fatal(err)
@@ -528,8 +528,8 @@ func TestBodyErrorUnknown(t *testing.T) {
 
 		err := r.Validate(Validate{Body: Object(test.Schema)}, nil, input, nil)
 
-		if !errors.As(err, &errUnknown) {
-			t.Error(err)
+		if !errors.Is(err, errUnknown) {
+			t.Errorf("%v: expected '%v' got '%v'", i, errUnknown, err)
 			continue
 		}
 	}

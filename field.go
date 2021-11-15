@@ -2,6 +2,7 @@ package crud
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -121,6 +122,11 @@ func (f *Field) Validate(value interface{}) error {
 		if f.max != nil && float64(len(v)) > *f.max {
 			return errMaximum
 		}
+	case map[string]interface{}:
+		if f.kind != KindObject {
+			return errWrongType
+		}
+		return validateObject("", f, v)
 	default:
 		return fmt.Errorf("unhandled type %v", v)
 	}
@@ -129,6 +135,78 @@ func (f *Field) Validate(value interface{}) error {
 		return errEnumNotFound
 	}
 
+	return nil
+}
+
+// validateObject is a recursive function that validates the field values in the object. It also
+// performs stripping of values, or erroring when unexpected fields are present, depending on the
+// options on the fields.
+func validateObject(name string, field *Field, body interface{}) error {
+	switch v := body.(type) {
+	case nil:
+		if field.required != nil && *field.required {
+			return fmt.Errorf("object validation failed for field %v: %w", name, errRequired)
+		}
+	case string, bool:
+		if err := field.Validate(v); err != nil {
+			return fmt.Errorf("object validation failed for field %v: %w", name, err)
+		}
+	case float64:
+		if field.kind == KindInteger {
+			// JSON doesn't have integers, so Go treats these fields as float64.
+			// Need to convert to integer before validating it.
+			if v != float64(int64(v)) {
+				return fmt.Errorf("object validation failed for field %v: %w", name, errWrongType)
+			}
+			if err := field.Validate(int(v)); err != nil {
+				return fmt.Errorf("object validation failed for field %v: %w", name, err)
+			}
+		} else {
+			if err := field.Validate(v); err != nil {
+				return fmt.Errorf("object validation failed for field %v: %w", name, err)
+			}
+		}
+	case []interface{}:
+		if err := field.Validate(v); err != nil {
+			return fmt.Errorf("object validation failed for field %v: %w", name, err)
+		}
+		if field.arr != nil {
+			for i, item := range v {
+				if err := validateObject(fmt.Sprintf("%v[%v]", name, i), field.arr, item); err != nil {
+					return err
+				}
+			}
+		}
+	case map[string]interface{}:
+		if !field.isAllowUnknown() {
+			for key := range v {
+				if _, ok := field.obj[key]; !ok {
+					return fmt.Errorf("unknown field in object: %v %w", key, errUnknown)
+				}
+			}
+		}
+
+		if field.isStripUnknown() {
+			for key := range v {
+				if _, ok := field.obj[key]; !ok {
+					delete(v, key)
+				}
+			}
+		}
+
+		for childName, childField := range field.obj {
+			newV := v[childName]
+			if newV == nil && childField.required != nil && *childField.required {
+				return fmt.Errorf("object validation failed for field %v.%v: %w", name, childName, errRequired)
+			} else if newV == nil && childField._default != nil {
+				v[childName] = childField._default
+			} else if err := validateObject(name+"."+childName, &childField, v[childName]); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("object validation failed for type %v: %w", reflect.TypeOf(v), errWrongType)
+	}
 	return nil
 }
 
@@ -372,4 +450,18 @@ func (f *Field) ToJsonSchema() JsonSchema {
 		}
 	}
 	return schema
+}
+
+func (f Field) isAllowUnknown() bool {
+	if f.unknown == nil {
+		return true // by default allow unknown
+	}
+	return *f.unknown
+}
+
+func (f Field) isStripUnknown() bool {
+	if f.strip == nil {
+		return true // by default strip
+	}
+	return *f.strip
 }
