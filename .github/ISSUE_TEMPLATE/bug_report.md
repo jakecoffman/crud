@@ -11,6 +11,10 @@ assignees: ''
 
 A clear and concise description of what the bug is.
 
+Please include:
+- The crud version from `go.mod`
+- What router and adapter you are using 
+
 If this is more of a question, please use Discussions instead, don't open an issue.
 
 **To reproduce the bug**
