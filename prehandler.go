@@ -90,6 +90,8 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 		if f.unknown == nil {
 			f = f.Unknown(r.allowUnknown)
 		}
+		// ensure Required() since it's confusing and error-prone otherwise
+		f = f.Required()
 		if err := f.Validate(body); err != nil {
 			return err
 		}

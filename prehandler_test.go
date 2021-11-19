@@ -681,3 +681,13 @@ func TestStrip_Query(t *testing.T) {
 		t.Error("Expected the value to have been stripped")
 	}
 }
+
+func Test_BodyValidateRequiredAutomatically(t *testing.T) {
+	r := NewRouter("", "", &TestAdapter{}, option.AllowUnknown(false))
+
+	err := r.Validate(Validate{Body: Object(map[string]Field{})}, nil, nil, nil)
+
+	if !errors.Is(err, errRequired) {
+		t.Error("Expected errRequired got", err)
+	}
+}
