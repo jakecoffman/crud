@@ -28,13 +28,16 @@ func (r *Router) Validate(val Validate, query url.Values, body interface{}, path
 				}
 			}
 			if schema.kind == KindArray {
+				if schema.min != nil && float64(len(queryValue)) < *schema.min {
+					return errMinimum
+				}
+				if schema.max != nil && float64(len(queryValue)) > *schema.max {
+					return errMaximum
+				}
 				// sadly we have to convert to a []interface{} to simplify the validation code
 				var intray []interface{}
 				for _, v := range queryValue {
 					intray = append(intray, v)
-				}
-				if err := schema.Validate(intray); err != nil {
-					return fmt.Errorf("query validation failed for field %v: %w", field, err)
 				}
 				if schema.arr != nil {
 					for _, v := range queryValue {

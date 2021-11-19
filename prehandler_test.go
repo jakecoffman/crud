@@ -220,7 +220,7 @@ func TestQueryValidation(t *testing.T) {
 
 		err = r.Validate(Validate{Query: Object(test.Schema)}, query, nil, nil)
 
-		if errors.Unwrap(err) != test.Expected {
+		if !errors.Is(err, test.Expected) {
 			t.Errorf("%v: expected '%v' got '%v'. input: '%v'. schema: '%v'", i, test.Expected, err, test.Input, test.Schema)
 		}
 	}
@@ -442,7 +442,7 @@ func TestBodyValidation(t *testing.T) {
 
 		err := r.Validate(Validate{Body: Object(test.Schema)}, nil, input, nil)
 
-		if errors.Unwrap(err) != test.Expected {
+		if !errors.Is(err, test.Expected) {
 			t.Errorf("expected '%v' got '%v'. input: '%v'. schema: '%v'", test.Expected, err, test.Input, test.Schema)
 		}
 	}

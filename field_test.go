@@ -2,6 +2,7 @@ package crud
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -331,6 +332,21 @@ func TestField_Array(t *testing.T) {
 			Input:    []interface{}{1},
 			Expected: nil,
 		},
+		{
+			Field:    Array().Items(String()),
+			Input:    []interface{}{},
+			Expected: nil,
+		},
+		{
+			Field:    Array().Items(String().Required()),
+			Input:    []interface{}{""},
+			Expected: errRequired,
+		},
+		{
+			Field:    Array().Items(String().Required()),
+			Input:    []interface{}{"hi"},
+			Expected: nil,
+		},
 	}
 
 	for i, test := range table {
@@ -397,5 +413,100 @@ func TestField_Object(t *testing.T) {
 		if v := test.Field.Validate(test.Input); !errors.Is(v, test.Expected) {
 			t.Errorf("%v: For input '%v', expected '%v' got '%v'", i, test.Input, test.Expected, v)
 		}
+	}
+}
+
+// Tests children inheriting their parent's settings
+func TestField_Object_Setting_Inheritance(t *testing.T) {
+	obj := Object(map[string]Field{
+		"child": Object(map[string]Field{}),
+	}).Strip(false)
+
+	input := map[string]interface{}{
+		"child": map[string]interface{}{
+			"grandchild": true,
+		},
+		"another": "hi",
+	}
+
+	err := obj.Validate(input)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if v, ok := input["another"]; !ok {
+		t.Errorf("another is missing")
+	} else {
+		if v != "hi" {
+			t.Error("expected hi got", v)
+		}
+	}
+
+	if v, ok := input["child"]; !ok {
+		t.Errorf("child missing")
+	} else {
+		child := v.(map[string]interface{})
+		if v, ok := child["grandchild"]; !ok {
+			t.Errorf("grandchild missing")
+		} else if v != true {
+			t.Error("grandchild expected true, got", v)
+		}
+	}
+
+	obj = Object(map[string]Field{
+		"child": Object(map[string]Field{}).Strip(true),
+	}).Strip(false)
+
+	err = obj.Validate(input)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if v, ok := input["another"]; !ok {
+		t.Errorf("another is missing")
+	} else {
+		if v != "hi" {
+			t.Error("expected hi got", v)
+		}
+	}
+
+	if v, ok := input["child"]; !ok {
+		t.Errorf("child missing")
+	} else {
+		child := v.(map[string]interface{})
+		if _, ok := child["grandchild"]; ok {
+			t.Errorf("expected grandchild to be stripped, but it still exists")
+		}
+	}
+}
+
+// Tests children inheriting their parent's settings
+func TestField_Array_Setting_Inheritance(t *testing.T) {
+	obj := Array().Items(Object(map[string]Field{})).Strip(false)
+
+	input := []interface{}{
+		map[string]interface{}{
+			"hello": "world",
+		},
+	}
+
+	err := obj.Validate(input)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if fmt.Sprint(input) != "[map[hello:world]]" {
+		t.Errorf(fmt.Sprint(input))
+	}
+
+	obj = Array().Items(Object(map[string]Field{}).Strip(true)).Strip(false)
+
+	err = obj.Validate(input)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if fmt.Sprint(input) != "[map[]]" {
+		t.Errorf(fmt.Sprint(input))
 	}
 }

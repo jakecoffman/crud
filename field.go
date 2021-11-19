@@ -122,6 +122,20 @@ func (f *Field) Validate(value interface{}) error {
 		if f.max != nil && float64(len(v)) > *f.max {
 			return errMaximum
 		}
+		if f.arr != nil {
+			// child fields inherit parent's settings, unless specified on child
+			if f.arr.strip == nil {
+				f.arr.strip = f.strip
+			}
+			if f.arr.unknown == nil {
+				f.arr.unknown = f.unknown
+			}
+			for _, item := range v {
+				if err := f.arr.Validate(item); err != nil {
+					return err
+				}
+			}
+		}
 	case map[string]interface{}:
 		if f.kind != KindObject {
 			return errWrongType
@@ -141,8 +155,8 @@ func (f *Field) Validate(value interface{}) error {
 // validateObject is a recursive function that validates the field values in the object. It also
 // performs stripping of values, or erroring when unexpected fields are present, depending on the
 // options on the fields.
-func validateObject(name string, field *Field, body interface{}) error {
-	switch v := body.(type) {
+func validateObject(name string, field *Field, input interface{}) error {
+	switch v := input.(type) {
 	case nil:
 		if field.required != nil && *field.required {
 			return fmt.Errorf("object validation failed for field %v: %w", name, errRequired)
@@ -195,6 +209,14 @@ func validateObject(name string, field *Field, body interface{}) error {
 		}
 
 		for childName, childField := range field.obj {
+			// child fields inherit parent's settings, unless specified on child
+			if childField.strip == nil {
+				childField.strip = field.strip
+			}
+			if childField.unknown == nil {
+				childField.unknown = field.unknown
+			}
+
 			newV := v[childName]
 			if newV == nil && childField.required != nil && *childField.required {
 				return fmt.Errorf("object validation failed for field %v.%v: %w", name, childName, errRequired)
@@ -352,13 +374,13 @@ func (f Field) Allow(values ...interface{}) Field {
 	return f
 }
 
-// Strip overrides the global "strip unknown" setting just for this field
+// Strip overrides the global "strip unknown" setting just for this field, and all children of this field
 func (f Field) Strip(strip bool) Field {
 	f.strip = &strip
 	return f
 }
 
-// Unknown overrides the global "allow unknown" setting just for this field
+// Unknown overrides the global "allow unknown" setting just for this field, and all children of this field
 func (f Field) Unknown(allow bool) Field {
 	f.unknown = &allow
 	return f
