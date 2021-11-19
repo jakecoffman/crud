@@ -9,6 +9,25 @@ import (
 // Validate checks the spec against the inputs and returns an error if it finds one.
 func (r *Router) Validate(val Validate, query url.Values, body interface{}, path map[string]string) error {
 	if val.Query.kind == KindObject { // not sure how any other type makes sense
+
+		// reject unknown values
+		if (val.Query.unknown == nil && r.allowUnknown == false) || !val.Query.isAllowUnknown() {
+			for key := range query {
+				if _, ok := val.Query.obj[key]; !ok {
+					return fmt.Errorf("unexpected query parameter %s: %w", key, errUnknown)
+				}
+			}
+		}
+
+		// strip unknown values
+		if (val.Query.strip == nil && r.stripUnknown == true) || val.Query.isStripUnknown() {
+			for key := range query {
+				if _, ok := val.Query.obj[key]; !ok {
+					delete(query, key)
+				}
+			}
+		}
+
 		for field, schema := range val.Query.obj {
 			// query values are always strings, so we must try to convert
 			queryValue := query[field]

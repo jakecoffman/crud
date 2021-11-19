@@ -586,7 +586,7 @@ func TestPathValidation(t *testing.T) {
 	}
 }
 
-func TestStrip(t *testing.T) {
+func TestStrip_Body(t *testing.T) {
 	r := NewRouter("", "", &TestAdapter{}, option.StripUnknown(true))
 	var input interface{}
 	input = map[string]interface{}{
@@ -617,7 +617,7 @@ func TestStrip(t *testing.T) {
 	}
 }
 
-func TestUnknown(t *testing.T) {
+func TestUnknown_Body(t *testing.T) {
 	r := NewRouter("", "", &TestAdapter{}, option.AllowUnknown(true))
 	var input interface{}
 	input = map[string]interface{}{
@@ -637,5 +637,47 @@ func TestUnknown(t *testing.T) {
 	err = r.Validate(Validate{Body: Object(map[string]Field{}).Unknown(false)}, nil, input, nil)
 	if err == nil {
 		t.Errorf("Expected error")
+	}
+}
+
+func TestUnknown_Query(t *testing.T) {
+	r := NewRouter("", "", &TestAdapter{}, option.AllowUnknown(false))
+	query := url.Values{"unknown": []string{"value"}}
+	spec := Object(map[string]Field{})
+
+	err := r.Validate(Validate{Query: spec}, query, nil, nil)
+	if !errors.Is(err, errUnknown) {
+		t.Errorf("Expected '%s' but got '%s'", errUnknown, err)
+	}
+
+	spec = spec.Unknown(true)
+	err = r.Validate(Validate{Query: spec}, query, nil, nil)
+	if err != nil {
+		t.Error("Unexpected error", err)
+	}
+}
+
+func TestStrip_Query(t *testing.T) {
+	r := NewRouter("", "", &TestAdapter{})
+	query := url.Values{"unknown": []string{"value"}}
+	spec := Object(map[string]Field{}).Strip(false)
+
+	err := r.Validate(Validate{Query: spec}, query, nil, nil)
+	if err != nil {
+		t.Error("Unexpected error", err)
+	}
+
+	if _, ok := query["unknown"]; !ok {
+		t.Error("Expected the value to not have been stripped")
+	}
+
+	spec = spec.Strip(true)
+	err = r.Validate(Validate{Query: spec}, query, nil, nil)
+	if err != nil {
+		t.Error("Unexpected error", err)
+	}
+
+	if _, ok := query["unknown"]; ok {
+		t.Error("Expected the value to have been stripped")
 	}
 }
