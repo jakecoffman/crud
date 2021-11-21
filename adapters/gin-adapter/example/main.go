@@ -53,6 +53,8 @@ var Routes = []crud.Spec{{
 		Body: crud.Object(map[string]crud.Field{
 			"name":       crud.String().Required().Example("Bob"),
 			"arrayMatey": crud.Array().Items(crud.Number()),
+			"date-time":  crud.DateTime(),
+			"date":       crud.Date(),
 		}),
 	},
 	Responses: map[string]crud.Response{

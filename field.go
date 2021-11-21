@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Field allows specification of swagger or json schema types using the builder pattern.
 type Field struct {
 	kind        string
+	format      string
 	obj         map[string]Field
 	max         *float64
 	min         *float64
@@ -107,6 +109,18 @@ func (f *Field) Validate(value interface{}) error {
 		}
 		if f.min != nil && len(v) < int(*f.min) {
 			return errMinimum
+		}
+		switch f.format {
+		case FormatDateTime:
+			_, err := time.Parse(time.RFC3339, v)
+			if err != nil {
+				return err
+			}
+		case FormatDate:
+			_, err := time.Parse(fullDate, v)
+			if err != nil {
+				return err
+			}
 		}
 	case bool:
 		if f.kind != KindBoolean {
@@ -253,6 +267,19 @@ func String() Field {
 	return Field{kind: KindString}
 }
 
+// DateTime creates a field with dateTime type
+func DateTime() Field {
+	return Field{kind: KindString, format: FormatDateTime}
+}
+
+// https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
+const fullDate = "2006-01-02"
+
+// Date creates a field with date type
+func Date() Field {
+	return Field{kind: KindString, format: FormatDate}
+}
+
 // Boolean creates a field with boolean type
 func Boolean() Field {
 	return Field{kind: KindBoolean}
@@ -367,6 +394,18 @@ func (f Field) Items(item Field) Field {
 	return f
 }
 
+const (
+	FormatDate     = "date"
+	FormatDateTime = "dateTime"
+)
+
+// Format is used to set custom format types. Note that formats with special
+// validation in this library also have their own constructor. See DateTime for example.
+func (f Field) Format(format string) Field {
+	f.format = format
+	return f
+}
+
 // Allow lets you break rules
 // For example, String().Required() excludes "", unless you Allow("")
 func (f Field) Allow(values ...interface{}) Field {
@@ -432,7 +471,8 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 	return
 }
 
-// ToJsonSchema transforms a field into a JsonSchema.
+// ToJsonSchema transforms a field into a Swagger Schema.
+// TODO this is an extension of JsonSchema, rename in v2 ToSchema() Schema
 func (f *Field) ToJsonSchema() JsonSchema {
 	schema := JsonSchema{
 		Type: f.kind,
@@ -449,9 +489,20 @@ func (f *Field) ToJsonSchema() JsonSchema {
 		for name, field := range f.obj {
 			prop := JsonSchema{
 				Type:        field.kind,
+				Format:      field.format,
 				Example:     field.example,
 				Description: field.description,
 				Default:     field._default,
+			}
+			if field.example == nil {
+				if field.kind == KindString {
+					switch field.format {
+					case FormatDateTime:
+						prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(time.RFC3339)
+					case FormatDate:
+						prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(fullDate)
+					}
+				}
 			}
 			if field.required != nil && *field.required {
 				schema.Required = append(schema.Required, name)

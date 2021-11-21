@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestField_Max_Panic(t *testing.T) {
@@ -508,5 +509,33 @@ func TestField_Array_Setting_Inheritance(t *testing.T) {
 
 	if fmt.Sprint(input) != "[map[]]" {
 		t.Errorf(fmt.Sprint(input))
+	}
+}
+
+func TestField_Validate_DateTime(t *testing.T) {
+	dt := DateTime()
+	err := dt.Validate("q")
+	switch v := err.(type) {
+	case *time.ParseError:
+	default:
+		t.Errorf("Expected a ParseError, got %s", v)
+	}
+
+	if err = dt.Validate(time.Now().Format(time.RFC3339)); err != nil {
+		t.Errorf("Expected no error, got %s", err)
+	}
+}
+
+func TestField_Validate_Date(t *testing.T) {
+	dt := Date()
+	err := dt.Validate("q")
+	switch v := err.(type) {
+	case *time.ParseError:
+	default:
+		t.Errorf("Expected a ParseError, got %s", v)
+	}
+
+	if err = dt.Validate(time.Now().Format(fullDate)); err != nil {
+		t.Errorf("Expected no error, got %s", err)
 	}
 }

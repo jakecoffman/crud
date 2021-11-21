@@ -16,6 +16,7 @@ type Info struct {
 
 type JsonSchema struct {
 	Type        string                `json:"type,omitempty"`
+	Format      string                `json:"format,omitempty"`
 	Properties  map[string]JsonSchema `json:"properties,omitempty"`
 	Items       *JsonSchema           `json:"items,omitempty"`
 	Required    []string              `json:"required,omitempty"`
@@ -48,6 +49,7 @@ type Parameter struct {
 	In   string `json:"in"`
 	Name string `json:"name"`
 
+	// one of path, query, header, body, or form
 	Type   string `json:"type,omitempty"`
 	Schema *Ref   `json:"schema,omitempty"`
 
