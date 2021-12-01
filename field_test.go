@@ -115,6 +115,16 @@ func TestField_Integer(t *testing.T) {
 		},
 		{
 			Field:    Integer(),
+			Input:    "7",
+			Expected: errWrongType,
+		},
+		{
+			Field:    Integer(),
+			Input:    7., // Allowed since body will contain float64 with JSON
+			Expected: nil,
+		},
+		{
+			Field:    Integer(),
 			Input:    nil,
 			Expected: nil,
 		},

@@ -88,7 +88,12 @@ func (f *Field) Validate(value interface{}) error {
 			return errMinimum
 		}
 	case float64:
-		if f.kind != KindNumber {
+		if f.kind == KindInteger {
+			// since JSON is unmarshalled as float64 always
+			if float64(int(v)) != v {
+				return errWrongType
+			}
+		} else if f.kind != KindNumber {
 			return errWrongType
 		}
 		if f.max != nil && v > *f.max {
