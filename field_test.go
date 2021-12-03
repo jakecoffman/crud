@@ -27,6 +27,16 @@ func TestField_Min_Panic(t *testing.T) {
 	String().Max(1).Min(2)
 }
 
+func TestField_Pattern_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	String().Pattern("[")
+}
+
 func TestField_String(t *testing.T) {
 	table := []struct {
 		Field    Field
@@ -92,6 +102,16 @@ func TestField_String(t *testing.T) {
 			Field:    String().Enum("hi"),
 			Input:    "hi",
 			Expected: nil,
+		},
+		{
+			Field:    String().Pattern("[a-c]"),
+			Input:    "abc",
+			Expected: nil,
+		},
+		{
+			Field:    String().Pattern("[a-c]"),
+			Input:    "def",
+			Expected: errPattern,
 		},
 	}
 
