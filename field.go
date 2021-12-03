@@ -3,6 +3,7 @@ package crud
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -14,6 +15,7 @@ type Field struct {
 	obj         map[string]Field
 	max         *float64
 	min         *float64
+	pattern     *regexp.Regexp
 	required    *bool
 	example     interface{}
 	description string
@@ -64,6 +66,7 @@ var (
 	errMinimum      = fmt.Errorf("minimum exceeded")
 	errEnumNotFound = fmt.Errorf("value not in enum")
 	errUnknown      = fmt.Errorf("unknown value")
+	errPattern      = fmt.Errorf("value does not match pattern")
 )
 
 // Validate is used in the validation middleware to tell if the value passed
@@ -114,6 +117,9 @@ func (f *Field) Validate(value interface{}) error {
 		}
 		if f.min != nil && len(v) < int(*f.min) {
 			return errMinimum
+		}
+		if f.pattern != nil && !f.pattern.MatchString(v) {
+			return errPattern
 		}
 		switch f.format {
 		case FormatDateTime:
@@ -328,6 +334,12 @@ func (f Field) Max(max float64) Field {
 	return f
 }
 
+// Pattern specifies a regex pattern value for this field
+func (f Field) Pattern(pattern string) Field {
+	f.pattern = regexp.MustCompile(pattern)
+	return f
+}
+
 // Required specifies the field must be provided. Can't be used with Default.
 func (f Field) Required() Field {
 	if f._default != nil {
@@ -460,6 +472,9 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 				Minimum:     field.min,
 				Maximum:     field.max,
 			}
+			if field.pattern != nil {
+				param.Pattern = field.pattern.String()
+			}
 			if field.kind == KindArray {
 				if field.arr != nil {
 					temp := field.arr.ToJsonSchema()
@@ -517,6 +532,9 @@ func (f *Field) ToJsonSchema() JsonSchema {
 			}
 			if field.max != nil {
 				prop.Maximum = *field.max
+			}
+			if field.pattern != nil {
+				prop.Pattern = field.pattern.String()
 			}
 			if prop.Type == KindArray {
 				if field.arr != nil {
