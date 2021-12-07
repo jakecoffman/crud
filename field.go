@@ -482,9 +482,6 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 				}
 				param.CollectionFormat = "multi"
 			}
-			if field.kind == KindObject {
-				// TODO
-			}
 			parameters = append(parameters, param)
 		}
 	}
@@ -505,47 +502,54 @@ func (f *Field) ToJsonSchema() JsonSchema {
 			schema.Items = &items
 		}
 	case KindObject:
-		schema.Properties = map[string]JsonSchema{}
-		for name, field := range f.obj {
-			prop := JsonSchema{
-				Type:        field.kind,
-				Format:      field.format,
-				Example:     field.example,
-				Description: field.description,
-				Default:     field._default,
-			}
-			if field.example == nil {
-				if field.kind == KindString {
-					switch field.format {
-					case FormatDateTime:
-						prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(time.RFC3339)
-					case FormatDate:
-						prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(fullDate)
-					}
-				}
-			}
-			if field.required != nil && *field.required {
-				schema.Required = append(schema.Required, name)
-			}
-			if field.min != nil {
-				prop.Minimum = *field.min
-			}
-			if field.max != nil {
-				prop.Maximum = *field.max
-			}
-			if field.pattern != nil {
-				prop.Pattern = field.pattern.String()
-			}
-			if prop.Type == KindArray {
-				if field.arr != nil {
-					items := field.arr.ToJsonSchema()
-					prop.Items = &items
-				}
-			}
-			schema.Properties[name] = prop
-		}
+		populateProperties(f.obj, &schema)
 	}
 	return schema
+}
+
+// recursively fill in the schema
+func populateProperties(obj map[string]Field, schema *JsonSchema) {
+	schema.Properties = map[string]JsonSchema{}
+	for name, field := range obj {
+		prop := JsonSchema{
+			Type:        field.kind,
+			Format:      field.format,
+			Example:     field.example,
+			Description: field.description,
+			Default:     field._default,
+		}
+		if field.example == nil {
+			if field.kind == KindString {
+				switch field.format {
+				case FormatDateTime:
+					prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(time.RFC3339)
+				case FormatDate:
+					prop.Example = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local).Format(fullDate)
+				}
+			}
+		}
+		if field.required != nil && *field.required {
+			schema.Required = append(schema.Required, name)
+		}
+		if field.min != nil {
+			prop.Minimum = *field.min
+		}
+		if field.max != nil {
+			prop.Maximum = *field.max
+		}
+		if field.pattern != nil {
+			prop.Pattern = field.pattern.String()
+		}
+		if prop.Type == KindArray {
+			if field.arr != nil {
+				items := field.arr.ToJsonSchema()
+				prop.Items = &items
+			}
+		} else if prop.Type == KindObject {
+			populateProperties(field.obj, &prop)
+		}
+		schema.Properties[name] = prop
+	}
 }
 
 func (f Field) isAllowUnknown() bool {

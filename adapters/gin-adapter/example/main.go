@@ -55,7 +55,13 @@ var Routes = []crud.Spec{{
 			"arrayMatey": crud.Array().Items(crud.Number()),
 			"date-time":  crud.DateTime(),
 			"date":       crud.Date(),
-		}),
+			"nested": crud.Object(map[string]crud.Field{
+				"hello": crud.Integer().Pattern("[a-z]").Required(),
+				"deeper": crud.Object(map[string]crud.Field{
+					"number": crud.Number().Required(),
+				}).Required(),
+			}),
+		}).Unknown(false),
 	},
 	Responses: map[string]crud.Response{
 		"200": {
