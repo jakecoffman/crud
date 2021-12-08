@@ -72,9 +72,9 @@ var Routes = []crud.Spec{{
 	},
 	Responses: map[string]crud.Response{
 		"200": {
-			Schema: crud.JsonSchema{
+			Schema: crud.Schema{
 				Type: crud.KindObject,
-				Properties: map[string]crud.JsonSchema{
+				Properties: map[string]crud.Schema{
 					"hello": {Type: crud.KindString},
 				},
 			},

@@ -13,6 +13,31 @@ func main() {
 	if err := r.Add(Routes...); err != nil {
 		log.Fatal(err)
 	}
+	r.Swagger.ExternalDocs = &crud.ExternalDoc{
+		Description: "Widget user docs",
+		URL:         "https://example.com",
+	}
+	r.Swagger.Tags = []crud.Tag{
+		{
+			Name:        "Widgets",
+			Description: "Provides widget CRUD operations",
+			ExternalDocs: &crud.ExternalDoc{
+				Description: "Widget detailed docs",
+				URL:         "https://example.com/#widgets",
+			},
+		},
+	}
+	r.Swagger.SecurityDefinitions = map[string]crud.SecurityScheme{
+		"basic": {
+			Type:        "basic",
+			Description: "basic auth",
+		},
+	}
+	r.Swagger.Security = []map[string][]string{
+		{
+			"basic": {},
+		},
+	}
 
 	log.Println("Serving http://127.0.0.1:8080")
 	err := r.Serve("127.0.0.1:8080")
@@ -65,9 +90,9 @@ var Routes = []crud.Spec{{
 	},
 	Responses: map[string]crud.Response{
 		"200": {
-			Schema: crud.JsonSchema{
+			Schema: crud.Schema{
 				Type: crud.KindObject,
-				Properties: map[string]crud.JsonSchema{
+				Properties: map[string]crud.Schema{
 					"hello": {Type: crud.KindString},
 				},
 			},

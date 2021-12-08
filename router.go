@@ -36,7 +36,7 @@ func NewRouter(title, version string, adapter Adapter, options ...option.Option)
 			Swagger:     "2.0",
 			Info:        Info{Title: title, Version: version},
 			Paths:       map[string]*Path{},
-			Definitions: map[string]JsonSchema{},
+			Definitions: map[string]Schema{},
 		},
 		adapter:      adapter,
 		modelCounter: 1,
