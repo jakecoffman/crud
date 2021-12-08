@@ -56,7 +56,7 @@ var Routes = []crud.Spec{{
 			"date-time":  crud.DateTime(),
 			"date":       crud.Date(),
 			"nested": crud.Object(map[string]crud.Field{
-				"hello": crud.Integer().Pattern("[a-z]").Required(),
+				"hello": crud.String().Pattern("[a-z]").Required(),
 				"deeper": crud.Object(map[string]crud.Field{
 					"number": crud.Number().Required(),
 				}).Required(),
