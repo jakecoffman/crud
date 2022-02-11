@@ -8,7 +8,7 @@ go 1.16
 // since they are listed here. Go will not include them in your binary.
 
 require (
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.0
 	github.com/gorilla/mux v1.8.0
 	github.com/labstack/echo/v4 v4.2.0
 )
