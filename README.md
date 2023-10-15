@@ -3,9 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/jakecoffman/crud?status.svg)](https://godoc.org/github.com/jakecoffman/crud)
 [![Go](https://github.com/jakecoffman/crud/actions/workflows/go.yml/badge.svg)](https://github.com/jakecoffman/crud/actions/workflows/go.yml)
 
-A Swagger/OpenAPI builder and validation library for building HTTP/REST APIs.
-
-Heavily inspired by [hapi](https://hapi.dev/) and the [hapi-swagger](https://github.com/glennjones/hapi-swagger) projects.
+An OpenAPI v2 builder and validation library for building HTTP/REST APIs.
 
 No additional dependencies besides the router you choose.
 
@@ -15,15 +13,15 @@ Version 1.0 is stable, version 2 will support OpenAPI v3.
 
 ### Why
 
-Swagger is great, but up until now your options to use swagger are:
+OpenAPI is great, but up until now your options to use it are:
 
-1. Write it by hand and then make your server match your spec.
-2. Write it by hand and generate your server.
-3. Generate it from comments in your code.
+1. Write YAML by hand and then make your server match your spec.
+2. Write YAML by hand and generate your server.
+3. Generate YAML from comments in your code.
 
 None of these options seems like a great idea.
 
-This project takes another approach: make a specification in Go code using nice builders where possible. The swagger is generated from this spec and validation is done before your handler gets called. 
+This project takes another approach: make a specification in Go code using nice builders where possible. The OpenAPI spec is generated from this and validation is done before your handler gets called. 
 
 This reduces boilerplate that you have to write and gives you nice documentation too!
 
@@ -35,7 +33,7 @@ This reduces boilerplate that you have to write and gives you nice documentation
 
 ### Builtin ServeMux not supported
 
-This is disappointing, but the builtin http.ServeMux is not supported because it doesn't support routing by method, and doesn't support path params. This project is NOT a router so it will not try to reinvent these features.
+This is disappointing, but the builtin http.ServeMux is not supported because it doesn't support routing by method and doesn't support path params. This project is NOT a router so it will not try to reinvent these features.
 
 ### Getting started
 
