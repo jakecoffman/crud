@@ -24,11 +24,9 @@ func main() {
 var tags = []string{"Widgets"}
 
 var Routes = []crud.Spec{{
-	Method: "GET",
-	Path:   "/widgets",
-	Handler: func(c *gin.Context) {
-		c.JSON(200, c.Request.URL.Query())
-	},
+	Method:      "GET",
+	Path:        "/widgets",
+	Handler:     ok,
 	Description: "Lists widgets",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -38,15 +36,9 @@ var Routes = []crud.Spec{{
 		}),
 	},
 }, {
-	Method: "POST",
-	Path:   "/widgets",
-	Handler: func(c *gin.Context) {
-		var widget interface{}
-		if err := c.Bind(&widget); err != nil {
-			return
-		}
-		c.JSON(200, widget)
-	},
+	Method:      "POST",
+	Path:        "/widgets",
+	Handler:     bindAndRespond,
 	Description: "Adds a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -75,11 +67,9 @@ var Routes = []crud.Spec{{
 		},
 	},
 }, {
-	Method: "GET",
-	Path:   "/widgets/{id}",
-	Handler: func(c *gin.Context) {
-		c.JSON(200, c.Params)
-	},
+	Method:      "GET",
+	Path:        "/widgets/{id}",
+	Handler:     ok,
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -88,15 +78,9 @@ var Routes = []crud.Spec{{
 		}),
 	},
 }, {
-	Method: "PUT",
-	Path:   "/widgets/{id}",
-	Handler: func(c *gin.Context) {
-		var widget interface{}
-		if err := c.Bind(&widget); err != nil {
-			return
-		}
-		c.JSON(200, widget)
-	},
+	Method:      "PUT",
+	Path:        "/widgets/{id}",
+	Handler:     bindAndRespond,
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -108,11 +92,9 @@ var Routes = []crud.Spec{{
 		}),
 	},
 }, {
-	Method: "DELETE",
-	Path:   "/widgets/{id}",
-	Handler: func(c *gin.Context) {
-		c.JSON(200, c.Params)
-	},
+	Method:      "DELETE",
+	Path:        "/widgets/{id}",
+	Handler:     ok,
 	Description: "Deletes a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -121,4 +103,16 @@ var Routes = []crud.Spec{{
 		}),
 	},
 },
+}
+
+func ok(c *gin.Context) {
+	c.JSON(200, c.Request.URL.Query())
+}
+
+func bindAndRespond(c *gin.Context) {
+	var widget interface{}
+	if err := c.Bind(&widget); err != nil {
+		return
+	}
+	c.JSON(200, widget)
 }

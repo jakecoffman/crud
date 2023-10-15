@@ -1,28 +1,6 @@
-package main
+package widgets
 
-import (
-	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/jakecoffman/crud"
-	"github.com/jakecoffman/crud/adapters/gorilla-adapter"
-	"log"
-	"math/rand"
-	"net/http"
-)
-
-func main() {
-	r := crud.NewRouter("Widget API", "1.0.0", adapter.New())
-
-	if err := r.Add(Routes...); err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("Serving http://127.0.0.1:8080")
-	err := r.Serve("127.0.0.1:8080")
-	if err != nil {
-		log.Println(err)
-	}
-}
+import "github.com/jakecoffman/crud"
 
 var tags = []string{"Widgets"}
 
@@ -46,6 +24,9 @@ var Routes = []crud.Spec{{
 	Description: "Adds a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
+		Header: crud.Object(map[string]crud.Field{
+			"Authentication": crud.String().Required().Description("Must be 'password'"),
+		}),
 		Body: crud.Object(map[string]crud.Field{
 			"name":       crud.String().Required().Example("Bob"),
 			"arrayMatey": crud.Array().Items(crud.Number()),
@@ -65,7 +46,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "GET",
 	Path:        "/widgets/{id}",
-	Handler:     ok,
+	Handler:     okPath,
 	Description: "Updates a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -90,7 +71,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "DELETE",
 	Path:        "/widgets/{id}",
-	Handler:     ok,
+	Handler:     okPath,
 	Description: "Deletes a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
@@ -99,29 +80,4 @@ var Routes = []crud.Spec{{
 		}),
 	},
 },
-}
-
-func fakeAuthPreHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if rand.Intn(2) == 0 {
-			w.WriteHeader(http.StatusTeapot)
-			_, _ = w.Write([]byte("Random rejection from PreHandler"))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func ok(w http.ResponseWriter, r *http.Request) {
-	_ = json.NewEncoder(w).Encode(mux.Vars(r))
-}
-
-func bindAndOk(w http.ResponseWriter, r *http.Request) {
-	var widget interface{}
-	if err := json.NewDecoder(r.Body).Decode(&widget); err != nil {
-		w.WriteHeader(400)
-		_ = json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-	_ = json.NewEncoder(w).Encode(widget)
 }
