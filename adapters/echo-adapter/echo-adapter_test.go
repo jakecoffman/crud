@@ -1,10 +1,9 @@
 package adapter
 
 import (
-	"fmt"
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/crud/adapters/echo-adapter/example/widgets"
-	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -17,45 +16,29 @@ func TestSwaggerToEcho(t *testing.T) {
 	}
 }
 
-const address = "127.0.0.1:8080"
-
 func TestExampleServer(t *testing.T) {
-	r := crud.NewRouter("Widget API", "1.0.0", New())
+	adapter := New()
+	router := crud.NewRouter("Widget API", "1.0.0", adapter)
 
-	if err := r.Add(widgets.Routes...); err != nil {
+	if err := router.Add(widgets.Routes...); err != nil {
 		t.Fatal(err)
 	}
 
-	go func() {
-		err := r.Serve(address)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-
 	t.Run("GET /widgets", func(t *testing.T) {
-		// enforces the limit
-		res := get("/widgets?limit=100")
-		if res.StatusCode != 400 {
-			t.Error(res.StatusCode)
+		r := httptest.NewRequest("GET", "/widgets?limit=100", nil)
+		w := httptest.NewRecorder()
+		adapter.Echo.ServeHTTP(w, r)
+
+		if w.Result().StatusCode != 400 {
+			t.Error(w.Result().StatusCode)
 		}
 
-		res = get("/widgets?limit=25")
-		if res.StatusCode != 200 {
-			t.Error(res.StatusCode)
+		r = httptest.NewRequest("GET", "/widgets?limit=25", nil)
+		w = httptest.NewRecorder()
+		adapter.Echo.ServeHTTP(w, r)
+
+		if w.Result().StatusCode != 200 {
+			t.Error(w.Result().StatusCode)
 		}
 	})
-}
-
-func get(url string) *http.Response {
-	url = fmt.Sprintf("http://%s%s", address, url)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	return res
 }
