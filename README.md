@@ -21,19 +21,16 @@ OpenAPI is great, but up until now your options to use it are:
 
 None of these options seems like a great idea.
 
-This project takes another approach: make a specification in Go code using nice builders where possible. The OpenAPI spec is generated from this and validation is done before your handler gets called. 
+This project takes another approach: make a specification in Go code using type-safe builders where possible. The OpenAPI spec is generated from this and validation is done before your handler gets called. 
 
 This reduces boilerplate that you have to write and gives you nice documentation too!
 
 ### Examples
 
-- [Full Gin-Gonic Example](adapters/gin-adapter/example)
-- [Full Echo Example](adapters/echo-adapter/example)
-- [Full Gorilla Mux Example](adapters/gorilla-adapter/example)
-
-### Builtin ServeMux not supported
-
-This is disappointing, but the builtin http.ServeMux is not supported because it doesn't support routing by method and doesn't support path params. This project is NOT a router so it will not try to reinvent these features.
+- [ServeMux Example](_example/main.go)
+- [Gin-Gonic Example](adapters/gin-adapter/example)
+- [Echo Example](adapters/echo-adapter/example)
+- [Gorilla Mux Example](adapters/gorilla-adapter/example)
 
 ### Getting started
 
