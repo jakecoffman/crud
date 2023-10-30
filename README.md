@@ -57,7 +57,7 @@ crud.Spec{
 	Validate: crud.Validate{
 		Path: crud.Object(map[string]crud.Field{
 			"id": crud.Number().Required().Description("ID of the widget"),
-        	}),
+		}),
 		Body: crud.Object(map[string]crud.Field{
 			"owner": crud.String().Required().Example("Bob").Description("Widget owner's name"),
 			"quantity": crud.Integer().Min(1).Default(1).Description("The amount requested")
