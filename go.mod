@@ -1,6 +1,6 @@
 module github.com/jakecoffman/crud
 
-go 1.21.0
+go 1.22
 
 // It's worth noting here that only the router that YOU depend on will
 // end up in the binary. So if you use gorilla/mux since it has no
