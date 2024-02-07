@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: monthly
   - package-ecosystem: "gomod"
-    directory: "/"
+    directory: "/" # Location of package manifests
     schedule:
-      interval: monthly
+      interval: "monthly"
+    allow:
+      # Allow both direct and indirect updates for all packages
+      - dependency-type: "all"
+    groups:
+      all:
+        patterns:
+          - "*"
