@@ -488,10 +488,14 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 	return
 }
 
+func (f *Field) ToSchema() Schema {
+	return f.ToJsonSchema()
+}
+
 // ToJsonSchema transforms a field into a Swagger Schema.
-// TODO this is an extension of JsonSchema, rename in v2 ToSchema() Schema
-func (f *Field) ToJsonSchema() JsonSchema {
-	schema := JsonSchema{
+// Deprecated: use ToSchema
+func (f *Field) ToJsonSchema() Schema {
+	schema := Schema{
 		Type: f.kind,
 	}
 
@@ -509,9 +513,9 @@ func (f *Field) ToJsonSchema() JsonSchema {
 
 // recursively fill in the schema
 func populateProperties(obj map[string]Field, schema *JsonSchema) {
-	schema.Properties = map[string]JsonSchema{}
+	schema.Properties = map[string]Schema{}
 	for name, field := range obj {
-		prop := JsonSchema{
+		prop := Schema{
 			Type:        field.kind,
 			Format:      field.format,
 			Example:     field.example,
