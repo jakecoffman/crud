@@ -11,7 +11,9 @@ updates:
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: "all"
+    open-pull-request-limit: 0
     groups:
       all:
+        applies-to: security-updates
         patterns:
           - "*"
