@@ -177,6 +177,5 @@ func pathParms(swaggerUrl string) (params []string) {
 }
 
 // SwaggerUiTemplate contains the html for swagger UI.
-//
 //go:embed swaggerui.html
 var SwaggerUiTemplate []byte
