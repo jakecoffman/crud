@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jakecoffman/crud/option"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -123,15 +122,6 @@ func (r *Router) Add(specs ...Spec) error {
 		}
 		if spec.Validate.Query.Initialized() {
 			params := spec.Validate.Query.ToSwaggerParameters("query")
-			slices.SortFunc(params, func(a, b Parameter) int {
-				if a.Name < b.Name {
-					return -1
-				}
-				if a.Name > b.Name {
-					return 1
-				}
-				return 0
-			})
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Header.Initialized() {
@@ -187,5 +177,6 @@ func pathParms(swaggerUrl string) (params []string) {
 }
 
 // SwaggerUiTemplate contains the html for swagger UI.
+//
 //go:embed swaggerui.html
 var SwaggerUiTemplate []byte
