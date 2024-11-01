@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -483,6 +484,15 @@ func (f *Field) ToSwaggerParameters(in string) (parameters []Parameter) {
 				param.CollectionFormat = "multi"
 			}
 			parameters = append(parameters, param)
+			slices.SortFunc(parameters, func(a, b Parameter) int {
+				if a.Name < b.Name {
+					return -1
+				}
+				if a.Name > b.Name {
+					return 1
+				}
+				return 0
+			})
 		}
 	}
 	return
