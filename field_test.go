@@ -569,3 +569,21 @@ func TestField_Validate_Date(t *testing.T) {
 		t.Errorf("Expected no error, got %s", err)
 	}
 }
+
+func TestToSwaggerParameters(t *testing.T) {
+	t.Run("sorts the objects by name", func(t *testing.T) {
+		field := Object(map[string]Field{
+			"b": String(),
+			"a": String(),
+		})
+		swaggerParams := field.ToSwaggerParameters("query")
+
+		if swaggerParams[0].Name != "a" {
+			t.Errorf("Expected 'a' to be first, got %s", swaggerParams[0].Name)
+		}
+
+		if swaggerParams[1].Name != "b" {
+			t.Errorf("Expected 'b' to be second, got %s", swaggerParams[1].Name)
+		}
+	})
+}
