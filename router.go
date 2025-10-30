@@ -3,9 +3,10 @@ package crud
 import (
 	_ "embed"
 	"fmt"
-	"github.com/jakecoffman/crud/option"
 	"regexp"
 	"strings"
+
+	"github.com/jakecoffman/crud/option"
 )
 
 // Router is the main object that is used to generate swagger and holds the underlying router.
@@ -133,15 +134,29 @@ func (r *Router) Add(specs ...Spec) error {
 			operation.Parameters = append(operation.Parameters, params...)
 		}
 		if spec.Validate.Body.Initialized() {
-			modelName := fmt.Sprintf("Model-%v", r.modelCounter)
+			modelName := spec.RequestModelName
+			if modelName == "" {
+				modelName = fmt.Sprintf("Model-%v", r.modelCounter)
+				r.modelCounter++
+			}
+
 			parameter := Parameter{
 				In:     "body",
 				Name:   "body",
 				Schema: &Ref{fmt.Sprint("#/definitions/", modelName)},
 			}
 			r.Swagger.Definitions[modelName] = spec.Validate.Body.ToJsonSchema()
-			r.modelCounter++
 			operation.Parameters = append(operation.Parameters, parameter)
+		}
+		if spec.Responses != nil {
+			for _, resp := range spec.Responses {
+				respModelName := resp.ModelName
+				if respModelName == "" {
+					respModelName = fmt.Sprintf("Model-%v", r.modelCounter)
+					r.modelCounter++
+				}
+				r.Swagger.Definitions[respModelName] = resp.Schema
+			}
 		}
 
 		if err := r.adapter.Install(r, &spec); err != nil {
@@ -176,6 +191,6 @@ func pathParms(swaggerUrl string) (params []string) {
 	return
 }
 
-// SwaggerUiTemplate contains the html for swagger UI.
+/* SwaggerUiTemplate contains the html for swagger UI. */
 //go:embed swaggerui.html
 var SwaggerUiTemplate []byte

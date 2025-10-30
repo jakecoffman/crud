@@ -70,6 +70,7 @@ type Ref struct {
 }
 
 type Response struct {
+	ModelName   string     `json:"modelName,omitempty"`
 	Schema      JsonSchema `json:"schema"`
 	Description string     `json:"description"`
 

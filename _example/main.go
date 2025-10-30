@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/jakecoffman/crud"
 	"log"
 	"math/rand"
 	"net/http"
+
+	"github.com/jakecoffman/crud"
 )
 
 // This example uses the built-in ServeMux with added functionality in Go 1.22.
@@ -40,12 +41,13 @@ var Routes = []crud.Spec{{
 		}),
 	},
 }, {
-	Method:      "POST",
-	Path:        "/widgets",
-	PreHandlers: fakeAuthPreHandler,
-	Handler:     bindAndOk,
-	Description: "Adds a widget",
-	Tags:        tags,
+	Method:           "POST",
+	Path:             "/widgets",
+	RequestModelName: "PostWidgetsRequest",
+	PreHandlers:      fakeAuthPreHandler,
+	Handler:          bindAndOk,
+	Description:      "Adds a widget",
+	Tags:             tags,
 	Validate: crud.Validate{
 		Body: crud.Object(map[string]crud.Field{
 			"name":       crud.String().Required().Example("Bob"),
@@ -54,6 +56,7 @@ var Routes = []crud.Spec{{
 	},
 	Responses: map[string]crud.Response{
 		"200": {
+			ModelName: "PostWidgetsResponse",
 			Schema: crud.JsonSchema{
 				Type: crud.KindObject,
 				Properties: map[string]crud.JsonSchema{
@@ -67,7 +70,7 @@ var Routes = []crud.Spec{{
 	Method:      "GET",
 	Path:        "/widgets/{id}",
 	Handler:     ok,
-	Description: "Updates a widget",
+	Description: "Gets a widget",
 	Tags:        tags,
 	Validate: crud.Validate{
 		Path: crud.Object(map[string]crud.Field{
@@ -75,11 +78,12 @@ var Routes = []crud.Spec{{
 		}),
 	},
 }, {
-	Method:      "PUT",
-	Path:        "/widgets/{id}",
-	Handler:     bindAndOk,
-	Description: "Updates a widget",
-	Tags:        tags,
+	Method:           "PUT",
+	Path:             "/widgets/{id}",
+	Handler:          bindAndOk,
+	Description:      "Updates a widget",
+	Tags:             tags,
+	RequestModelName: "PutWidgetsRequest",
 	Validate: crud.Validate{
 		Path: crud.Object(map[string]crud.Field{
 			"id": crud.Number().Required(),

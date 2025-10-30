@@ -21,6 +21,8 @@ type Spec struct {
 	Tags []string
 	// Summary is a short description of what an endpoint does in the Swagger
 	Summary string
+	// Optional name for the request model used in the Swagger documentation
+	RequestModelName string
 	// Validate is used to automatically validate the various inputs to the endpoint
 	Validate Validate
 	// Responses specifies the responses in Swagger. If none provided a default is used.
