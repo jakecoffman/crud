@@ -462,7 +462,7 @@ func TestField_Object_Setting_Inheritance(t *testing.T) {
 
 	err := obj.Validate(input)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	if v, ok := input["another"]; !ok {
@@ -490,7 +490,7 @@ func TestField_Object_Setting_Inheritance(t *testing.T) {
 
 	err = obj.Validate(input)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	if v, ok := input["another"]; !ok {
@@ -523,22 +523,22 @@ func TestField_Array_Setting_Inheritance(t *testing.T) {
 
 	err := obj.Validate(input)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	if fmt.Sprint(input) != "[map[hello:world]]" {
-		t.Errorf(fmt.Sprint(input))
+		t.Error(input)
 	}
 
 	obj = Array().Items(Object(map[string]Field{}).Strip(true)).Strip(false)
 
 	err = obj.Validate(input)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	if fmt.Sprint(input) != "[map[]]" {
-		t.Errorf(fmt.Sprint(input))
+		t.Error(input)
 	}
 }
 
